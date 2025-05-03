@@ -1,16 +1,11 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- */
-
 package co.edu.uis.organizationapp;
 
-/**
- *
- * @author Karol Hernandez
- */
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+
 public class OrganizationApp {
 
-    public static void main(String[] args) {
-        System.out.println("Hello World!");
+    public static void main(String[] args) throws UnsupportedLookAndFeelException {
+        UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatLightLaf());
     }
 }
