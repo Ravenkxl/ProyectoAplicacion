@@ -71,28 +71,10 @@ public class BloqueEvento extends JPanel {
             
             @Override
             public void mouseClicked(MouseEvent evt) {
-                EventoDialogo dialog = new EventoDialogo(
-                    (javax.swing.JFrame)SwingUtilities.getWindowAncestor(BloqueEvento.this),
-                    modelo,
-                    evento
-                );
-                dialog.setLocationRelativeTo(BloqueEvento.this);
-                dialog.setVisible(true);
-                
-                if (dialog.fueModificado()) {
-                    // Actualizar todas las vistas necesarias
-                    Container parent = getParent();
-                    while (parent != null) {
-                        if (parent instanceof VistaPanelDiaria) {
-                            ((VistaPanelDiaria) parent).actualizarVista();
-                            break;
-                        }
-                        if (parent instanceof CalendarioDashboard) {
-                            ((CalendarioDashboard) parent).actualizarListaEventos(evento.getFecha());
-                            break;
-                        }
-                        parent = parent.getParent();
-                    }
+                // Buscar el CalendarioDashboard padre
+                Container parent = SwingUtilities.getWindowAncestor(BloqueEvento.this);
+                if (parent instanceof CalendarioDashboard) {
+                    ((CalendarioDashboard) parent).mostrarDetallesEvento(evento);
                 }
             }
         });

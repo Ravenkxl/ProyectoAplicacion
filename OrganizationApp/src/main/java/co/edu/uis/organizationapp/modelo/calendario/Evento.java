@@ -60,6 +60,13 @@ public class Evento {
     public void setTareas(List<Tarea> tareas) {
         this.tareas = tareas;
     }
+    
+    public void agregarTarea(Tarea tarea) {
+        if (tareas == null) {
+            tareas = new ArrayList<>();
+        }
+        tareas.add(tarea);
+    }
 
     public Color getColor() {
         return color;

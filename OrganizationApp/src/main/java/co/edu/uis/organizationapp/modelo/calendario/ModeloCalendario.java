@@ -84,5 +84,13 @@ public class ModeloCalendario {
         eventoDiario2.setColor(new Color(0, 150, 136)); // Color verde azulado
         addEvento(eventoDiario2);
     }
+
+    public List<Evento> getTodosLosEventos() {
+        List<Evento> todosLosEventos = new ArrayList<>();
+        for (List<Evento> listaEventos : eventos.values()) {
+            todosLosEventos.addAll(listaEventos);
+        }
+        return todosLosEventos;
+    }
 }
 

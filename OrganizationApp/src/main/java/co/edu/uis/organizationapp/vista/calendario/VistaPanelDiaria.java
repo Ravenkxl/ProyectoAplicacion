@@ -3,6 +3,8 @@ package co.edu.uis.organizationapp.vista.calendario;
 import co.edu.uis.organizationapp.modelo.calendario.Evento;
 import co.edu.uis.organizationapp.modelo.calendario.ModeloCalendario;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.time.*;
 import java.util.List;
 import javax.swing.*;
@@ -97,6 +99,30 @@ public class VistaPanelDiaria extends JPanel {
         labelDia.setFont(new Font("Segoe UI", Font.BOLD, 16));
         labelDia.setHorizontalAlignment(SwingConstants.CENTER);
         header.add(labelDia, BorderLayout.CENTER);
+
+        // Hacer el header clickeable
+        header.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                // Buscar el CalendarioDashboard padre
+                Container parent = SwingUtilities.getWindowAncestor(VistaPanelDiaria.this);
+                if (parent instanceof CalendarioDashboard) {
+                    ((CalendarioDashboard) parent).actualizarListaEventos(diaActual);
+                }
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                header.setBackground(new Color(245, 245, 245));
+                header.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                header.setBackground(Color.WHITE);
+                header.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            }
+        });
 
         return header;
     }

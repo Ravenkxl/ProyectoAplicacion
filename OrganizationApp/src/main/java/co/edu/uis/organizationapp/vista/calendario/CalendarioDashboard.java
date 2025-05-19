@@ -11,6 +11,8 @@ import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.Year;
@@ -42,6 +44,7 @@ import net.miginfocom.swing.MigLayout;
 import com.formdev.flatlaf.FlatLightLaf;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import co.edu.uis.organizationapp.modelo.calendario.Tarea;
 
 public class CalendarioDashboard extends javax.swing.JFrame {
     
@@ -55,6 +58,9 @@ public class CalendarioDashboard extends javax.swing.JFrame {
     private DefaultListModel<Evento> eventListModel; // Modelo de datos para la lista
     private JLabel lblFechaSeleccionada;
     private LocalDate fechaSeleccionada;
+    private JTabbedPane pestañasDerecha;
+    private DefaultListModel<TareaCheckBox> modeloTareas;
+    private JTextArea txtDetalles;
 
     public CalendarioDashboard() {
         // Al inicio del constructor
@@ -83,15 +89,14 @@ public class CalendarioDashboard extends javax.swing.JFrame {
         tabbedPane.addTab("Mes", vistaMensual);
         tabbedPane.addTab("Año", vistaAnual);
 
-        // Establecer el día actual por defecto al iniciar
+        // Configurar fechas iniciales y seleccionar día actual
         LocalDate hoy = LocalDate.now();
         fechaSeleccionada = hoy;
-
-        // Configurar fechas iniciales
         vistaMensual.setMonth(YearMonth.from(hoy));
         vistaSemanal.establecerSemana(hoy.with(DayOfWeek.MONDAY));
         vistaDiaria.establecerDia(hoy);
         vistaAnual.establecerAño(Year.now());
+        actualizarListaEventos(hoy); // Actualizar lista con eventos del día actual
 
         // Configurar el look and feel
         try {
@@ -214,7 +219,7 @@ public class CalendarioDashboard extends javax.swing.JFrame {
             }
         });
 
-        // Add the change listener after tabbedPane is initialized
+        // Modificar el listener del tabbedPane para que actualice la lista de eventos
         tabbedPane.addChangeListener(e -> {
             switch (tabbedPane.getSelectedIndex()) {
                 case 0 -> {
@@ -225,16 +230,12 @@ public class CalendarioDashboard extends javax.swing.JFrame {
                 case 1 -> {
                     LocalDate inicioSemana = vistaSemanal.getSemanaActual();
                     lblTitulo.setText(formatearTituloSemanal(inicioSemana));
-                    // No actualizar fechaSeleccionada al cambiar a vista semanal
-                    actualizarListaEventos(fechaSeleccionada);
                 }
                 case 2 -> {
                     lblTitulo.setText(formatearTituloMensual(vistaMensual.getMesActual()));
-                    // Mantener la fecha seleccionada actual
                 }
                 case 3 -> {
                     lblTitulo.setText(String.valueOf(vistaAnual.getAñoActual().getValue()));
-                    // Mantener la fecha seleccionada actual
                 }
             }
             actualizarFechaSeleccionada();
@@ -283,61 +284,47 @@ public class CalendarioDashboard extends javax.swing.JFrame {
         panelEventos.add(panelBotones, BorderLayout.SOUTH);
         panelDerechoSplit.add(panelEventos, BorderLayout.CENTER);
 
-        // Panel inferior para detalles del evento seleccionado
+        // Modificar el panel derecho para usar pestañas
+        pestañasDerecha = new JTabbedPane();
+        
+        // Panel de detalles (el que ya existe)
         JPanel panelDetalles = new JPanel(new BorderLayout());
-        panelDetalles.setBorder(BorderFactory.createTitledBorder("Detalles del evento"));
-        JTextArea txtDetalles = new JTextArea(5, 0);
+        panelDetalles.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        
+        // Mover los componentes existentes al panel de detalles
+        txtDetalles = new JTextArea(5, 0);
         txtDetalles.setEditable(false);
         JScrollPane scrollDetalles = new JScrollPane(txtDetalles);
         panelDetalles.add(scrollDetalles);
-        panelDerechoSplit.add(panelDetalles, BorderLayout.SOUTH);
-
-        // Configurar eventos
-        eventList.addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                Evento eventoSeleccionado = eventList.getSelectedValue();
-                if (eventoSeleccionado != null) {
-                    String detalles = String.format("""
-                        Título: %s
-                        Fecha: %s
-                        Hora: %s - %s
-                        Descripción: %s""",
-                        eventoSeleccionado.getTitulo(),
-                        eventoSeleccionado.getFecha(),
-                        eventoSeleccionado.getInicio(),
-                        eventoSeleccionado.getFin(),
-                        eventoSeleccionado.getDescripcion());
-                    txtDetalles.setText(detalles);
-                } else {
-                    txtDetalles.setText("");
-                }
-            }
-        });
-
-        btnAgregar.addActionListener(e -> {
-            EventoDialogo dialogo = new EventoDialogo(this, modelo, fechaSeleccionada != null ? fechaSeleccionada : LocalDate.now());
-            dialogo.setVisible(true);
-            actualizarListaEventos(fechaSeleccionada);
-        });
-
-        btnEliminar.addActionListener(e -> {
-            Evento eventoSeleccionado = eventList.getSelectedValue();
-            if (eventoSeleccionado != null) {
-                int confirmacion = JOptionPane.showConfirmDialog(
-                    this,
-                    "¿Está seguro de que desea eliminar el evento '" + eventoSeleccionado.getTitulo() + "'?",
-                    "Confirmar eliminación",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.WARNING_MESSAGE
-                );
-                
-                if (confirmacion == JOptionPane.YES_OPTION) {
-                    modelo.eliminarEvento(eventoSeleccionado);
-                    actualizarListaEventos(fechaSeleccionada);
-                    actualizarVistas();
-                }
-            }
-        });
+        
+        // Nuevo panel de tareas
+        JPanel panelTareas = new JPanel(new BorderLayout());
+        panelTareas.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        
+        // Lista de tareas con checkboxes
+        modeloTareas = new DefaultListModel<>();
+        JList<TareaCheckBox> listaTareas = new JList<>(modeloTareas);
+        listaTareas.setCellRenderer(new TareaRenderer());
+        JScrollPane scrollTareas = new JScrollPane(listaTareas);
+        
+        // Botones para gestionar tareas
+        JPanel panelBotonesTareas = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton btnAgregarTarea = new JButton("Nueva Tarea");
+        JButton btnAgregarSubtarea = new JButton("Nueva Subtarea");
+        JButton btnEliminarTarea = new JButton("Eliminar");
+        
+        panelBotonesTareas.add(btnAgregarTarea);
+        panelBotonesTareas.add(btnAgregarSubtarea);
+        panelBotonesTareas.add(btnEliminarTarea);
+        
+        panelTareas.add(scrollTareas, BorderLayout.CENTER);
+        panelTareas.add(panelBotonesTareas, BorderLayout.SOUTH);
+        
+        // Agregar pestañas
+        pestañasDerecha.addTab("Detalles", panelDetalles);
+        pestañasDerecha.addTab("Tareas", panelTareas);
+        
+        panelDerechoSplit.add(pestañasDerecha, BorderLayout.CENTER);
 
         splitPane.setRightComponent(panelDerechoSplit);
         
@@ -360,12 +347,29 @@ public class CalendarioDashboard extends javax.swing.JFrame {
 
         // Opcional: Centrar la ventana en la pantalla
         setLocationRelativeTo(null);
+
+        // En el constructor, después de crear buscadorField
+        buscadorField.getDocument().addDocumentListener(new BuscadorListener(buscadorField));
     }
 
     private void inicializarListaEventos() {
         eventListModel = new DefaultListModel<>();
         eventList = new JList<>(eventListModel);
-        eventList.setCellRenderer(new RenderizadorDeListaDeEventos());  // Usar nuestro renderizador personalizado
+        eventList.setCellRenderer(new RenderizadorDeListaDeEventos());
+        
+        // Agregar MouseListener para el doble clic
+        eventList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {  // Detectar doble clic
+                    Evento eventoSeleccionado = eventList.getSelectedValue();
+                    if (eventoSeleccionado != null) {
+                        LocalDate fechaEvento = eventoSeleccionado.getFecha();
+                        irAFecha(fechaEvento);
+                    }
+                }
+            }
+        });
     }
 
     private void actualizarInterfaz() {
@@ -411,6 +415,51 @@ public class CalendarioDashboard extends javax.swing.JFrame {
         vistaAnual.actualizarVista();
     }
 
+    // Agregar este nuevo método para la búsqueda de eventos
+    private void buscarEventos(String texto) {
+        if (texto == null || texto.trim().isEmpty()) {
+            // Si no hay texto de búsqueda, mostrar los eventos del día seleccionado
+            actualizarListaEventos(fechaSeleccionada);
+            return;
+        }
+
+        // Limpiar la lista actual
+        eventListModel.clear();
+
+        // Crear una copia final del texto de búsqueda
+        final String textoBusqueda = texto.toLowerCase();
+
+        // Obtener todos los eventos del modelo y filtrarlos
+        modelo.getTodosLosEventos().stream()
+            .filter(evento -> 
+                evento.getTitulo().toLowerCase().contains(textoBusqueda) ||
+                evento.getDescripcion().toLowerCase().contains(textoBusqueda))
+            .forEach(eventListModel::addElement);
+    }
+
+    private class BuscadorListener implements javax.swing.event.DocumentListener {
+        private final JTextField searchField;
+
+        public BuscadorListener(JTextField searchField) {
+            this.searchField = searchField;
+        }
+
+        @Override
+        public void insertUpdate(javax.swing.event.DocumentEvent e) {
+            buscarEventos(searchField.getText());
+        }
+
+        @Override
+        public void removeUpdate(javax.swing.event.DocumentEvent e) {
+            buscarEventos(searchField.getText());
+        }
+
+        @Override
+        public void changedUpdate(javax.swing.event.DocumentEvent e) {
+            buscarEventos(searchField.getText());
+        }
+    }
+
     /**
      * @param args the command line arguments
      */
@@ -423,5 +472,55 @@ public class CalendarioDashboard extends javax.swing.JFrame {
                 new CalendarioDashboard().setVisible(true);
             }
         });
+    }
+
+    // Agregar este nuevo método para seleccionar un día
+    public void seleccionarDia(LocalDate fecha) {
+        fechaSeleccionada = fecha;
+        actualizarFechaSeleccionada();
+        // Actualizar el estado visual si es necesario
+        actualizarVistas();
+    }
+
+    // Agregar este nuevo método para navegar a una fecha específica
+    private void irAFecha(LocalDate fecha) {
+        // Cambiar a la vista diaria
+        tabbedPane.setSelectedIndex(0);
+        
+        // Establecer el día en la vista diaria
+        vistaDiaria.establecerDia(fecha);
+        
+        // Actualizar la fecha seleccionada y la interfaz
+        fechaSeleccionada = fecha;
+        actualizarFechaSeleccionada();
+        actualizarVistas();
+    }
+
+    // Agregar este método para mostrar detalles del evento en el panel derecho
+    public void mostrarDetallesEvento(Evento evento) {
+        if (evento != null && pestañasDerecha != null && txtDetalles != null && modeloTareas != null) {
+            pestañasDerecha.setSelectedIndex(0);
+            lblFechaSeleccionada.setText(formatearTituloDiario(evento.getFecha()));
+            actualizarListaEventos(evento.getFecha());
+            eventList.setSelectedValue(evento, true);
+            
+            txtDetalles.setText(String.format("""
+                Título: %s
+                Fecha: %s
+                Hora: %s - %s
+                Descripción: %s""",
+                evento.getTitulo(),
+                evento.getFecha(),
+                evento.getInicio(),
+                evento.getFin(),
+                evento.getDescripcion()));
+            
+            modeloTareas.clear();
+            if (evento.getTareas() != null) {
+                for (Tarea tarea : evento.getTareas()) {
+                    modeloTareas.addElement(new TareaCheckBox(tarea));
+                }
+            }
+        }
     }
 }
