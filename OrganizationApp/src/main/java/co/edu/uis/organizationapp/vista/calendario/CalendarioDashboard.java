@@ -1,10 +1,26 @@
 package co.edu.uis.organizationapp.vista.calendario;
 
 import co.edu.uis.organizationapp.modelo.calendario.Evento;
+import co.edu.uis.organizationapp.modelo.calendario.ModeloCalendario;
+import co.edu.uis.organizationapp.vista.calendario.VistaPanelMensual;
+import co.edu.uis.organizationapp.vista.calendario.VistaPanelSemanal;
+import co.edu.uis.organizationapp.vista.calendario.VistaPanelDiaria;
+import co.edu.uis.organizationapp.vista.calendario.VistaPanelAnual;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
+import java.awt.Font;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.Year;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+import javax.swing.Box;
+import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -12,26 +28,71 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
-import javax.swing.JTree;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import net.miginfocom.swing.MigLayout;
+import com.formdev.flatlaf.FlatLightLaf;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
 public class CalendarioDashboard extends javax.swing.JFrame {
     
+    private ModeloCalendario modelo;
+    private VistaPanelMensual vistaMensual;
+    private VistaPanelSemanal vistaSemanal;
+    private VistaPanelDiaria vistaDiaria;
+    private VistaPanelAnual vistaAnual;
+    private JTabbedPane tabbedPane;
     private JList<Evento> eventList; 
     private DefaultListModel<Evento> eventListModel; // Modelo de datos para la lista
-    private JTree subtaskList;
-    private DefaultTreeModel subtaskListModel; // Modelo de datos para el árbol
-    private DefaultMutableTreeNode subtaskRootNode; // Nodo raíz para el árbol
+    private JLabel lblFechaSeleccionada;
+    private LocalDate fechaSeleccionada;
 
     public CalendarioDashboard() {
-        // Llama a initComponents para configurar propiedades básicas del JFrame
-        initComponents();
+        // Al inicio del constructor
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        setMinimumSize(new Dimension(1200, 800));
+
+        // Inicializar el modelo y las vistas
+        this.modelo = new ModeloCalendario();
+        vistaMensual = new VistaPanelMensual(modelo);
+        vistaSemanal = new VistaPanelSemanal(modelo);
+        vistaDiaria = new VistaPanelDiaria(modelo);
+        vistaAnual = new VistaPanelAnual(modelo);
+        
+        // Configurar el look and feel
+        try {
+            UIManager.setLookAndFeel(new FlatLightLaf());
+            SwingUtilities.updateComponentTreeUI(this);
+        } catch (UnsupportedLookAndFeelException e) {
+        }
+        
+        // Configurar el TabbedPane con todas las vistas
+        tabbedPane = new JTabbedPane();
+        tabbedPane.addTab("Día", vistaDiaria);
+        tabbedPane.addTab("Semana", vistaSemanal);
+        tabbedPane.addTab("Mes", vistaMensual);
+        tabbedPane.addTab("Año", vistaAnual);
+        
+        // Configurar fechas iniciales
+        LocalDate hoy = LocalDate.now();
+        vistaMensual.setMonth(YearMonth.from(hoy));
+        vistaSemanal.establecerSemana(hoy.with(DayOfWeek.MONDAY));
+        vistaDiaria.establecerDia(hoy);
+        vistaAnual.establecerAño(Year.now());
+
+        // Establecer el día actual por defecto al iniciar
+        fechaSeleccionada = hoy;
+        actualizarFechaSeleccionada();
+        actualizarListaEventos(hoy);
 
         // --- 1. Establecer el administrador de diseño a BorderLayout ---
         getContentPane().setLayout(new BorderLayout());
@@ -40,171 +101,305 @@ public class CalendarioDashboard extends javax.swing.JFrame {
         JToolBar toolBar = new JToolBar();
         toolBar.setFloatable(false);
         
-        // Botones de vista (Día/Semana/Mes/Año)
-        JButton btnDia = new JButton("Día");
-        JButton btnSemana = new JButton("Semana");
-        JButton btnMes = new JButton("Mes");
-        JButton btnAnio = new JButton("Año");
+        // Panel izquierdo de la toolbar para navegación
+        JPanel navPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        navPanel.setOpaque(false);
         
-        toolBar.add(btnDia);
-        toolBar.add(btnSemana);
-        toolBar.add(btnMes);
-        toolBar.add(btnAnio);
+        // Botones de navegación con íconos
+        JButton btnAnterior = new JButton("\u25C0");  // Triángulo izquierdo
+        JButton btnHoy = new JButton("Hoy");
+        JButton btnSiguiente = new JButton("\u25B6");  // Triángulo derecho
         
-        toolBar.addSeparator(); // Separador visual
+        // Estilizar botones
+        btnAnterior.putClientProperty("JButton.buttonType", "roundRect");
+        btnHoy.putClientProperty("JButton.buttonType", "roundRect");
+        btnSiguiente.putClientProperty("JButton.buttonType", "roundRect");
         
-        // Flechas de navegación 
-        JButton btnAnterior = new JButton("<"); 
-        JButton btnSiguiente = new JButton(">");
-
-        toolBar.add(btnAnterior);
-        toolBar.add(btnSiguiente);
-
+        navPanel.add(btnAnterior);
+        navPanel.add(btnHoy);
+        navPanel.add(btnSiguiente);
+        
+        toolBar.add(navPanel);
         toolBar.addSeparator();
         
-        // Buscador
-        JTextField buscadorField = new JTextField(15); // Campo de texto para el buscador, 15 columnas de ancho
-        toolBar.add(buscadorField);
+        // Panel central para el título (se actualizará según la vista)
+        JLabel lblTitulo = new JLabel("Calendario");
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        toolBar.add(Box.createHorizontalGlue());
+        toolBar.add(lblTitulo);
+        toolBar.add(Box.createHorizontalGlue());
         
-        getContentPane().add(toolBar, BorderLayout.NORTH); // Añade el panel al NORTE
+        // Panel derecho para el buscador
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        searchPanel.setOpaque(false);
         
-        // Crea un nuevo JSplitPane con división horizontal
+        // Campo de búsqueda sin ícono
+        JTextField buscadorField = new JTextField(15);
+        buscadorField.putClientProperty("JTextField.placeholderText", "🔍 Buscar eventos...");
+        
+        searchPanel.add(buscadorField);
+        toolBar.add(searchPanel);
+        
+        getContentPane().add(toolBar, BorderLayout.NORTH);
+        
+        // Configurar acciones
+        btnHoy.addActionListener(e -> {
+            switch (tabbedPane.getSelectedIndex()) {
+                case 0 -> vistaDiaria.establecerDia(hoy);
+                case 1 -> vistaSemanal.establecerSemana(hoy.with(DayOfWeek.MONDAY));
+                case 2 -> vistaMensual.setMonth(YearMonth.from(hoy));
+                case 3 -> vistaAnual.establecerAño(Year.now());
+            }
+            actualizarInterfaz();
+        });
+
+        // Configurar navegación
+        btnAnterior.addActionListener(e -> {
+            switch (tabbedPane.getSelectedIndex()) {
+                case 0: // Día
+                    LocalDate diaAnterior = vistaDiaria.getDiaActual().minusDays(1);
+                    vistaDiaria.establecerDia(diaAnterior);
+                    lblTitulo.setText(formatearTituloDiario(diaAnterior));
+                    break;
+                case 1: // Semana
+                    LocalDate semanaAnterior = vistaSemanal.getSemanaActual().minusWeeks(1);
+                    vistaSemanal.establecerSemana(semanaAnterior);
+                    lblTitulo.setText(formatearTituloSemanal(semanaAnterior));
+                    break;
+                case 2: // Mes
+                    YearMonth mesAnterior = vistaMensual.getMesActual().minusMonths(1);
+                    vistaMensual.setMonth(mesAnterior);
+                    lblTitulo.setText(formatearTituloMensual(mesAnterior));
+                    break;
+                case 3: // Año
+                    Year añoAnterior = vistaAnual.getAñoActual().minusYears(1);
+                    vistaAnual.establecerAño(añoAnterior);
+                    lblTitulo.setText(String.valueOf(añoAnterior.getValue()));
+                    break;
+            }
+        });
+        
+        btnSiguiente.addActionListener(e -> {
+            switch (tabbedPane.getSelectedIndex()) {
+                case 0: // Día
+                    LocalDate diaSiguiente = vistaDiaria.getDiaActual().plusDays(1);
+                    vistaDiaria.establecerDia(diaSiguiente);
+                    lblTitulo.setText(formatearTituloDiario(diaSiguiente));
+                    break;
+                case 1: // Semana
+                    LocalDate semanaSiguiente = vistaSemanal.getSemanaActual().plusWeeks(1);
+                    vistaSemanal.establecerSemana(semanaSiguiente);
+                    lblTitulo.setText(formatearTituloSemanal(semanaSiguiente));
+                    break;
+                case 2: // Mes
+                    YearMonth mesSiguiente = vistaMensual.getMesActual().plusMonths(1);
+                    vistaMensual.setMonth(mesSiguiente);
+                    lblTitulo.setText(formatearTituloMensual(mesSiguiente));
+                    break;
+                case 3: // Año
+                    Year añoSiguiente = vistaAnual.getAñoActual().plusYears(1);
+                    vistaAnual.establecerAño(añoSiguiente);
+                    lblTitulo.setText(String.valueOf(añoSiguiente.getValue()));
+                    break;
+            }
+        });
+
+        // Modificar el listener del tabbedPane
+        tabbedPane.addChangeListener(e -> {
+            switch (tabbedPane.getSelectedIndex()) {
+                case 0 -> {
+                    lblTitulo.setText(formatearTituloDiario(vistaDiaria.getDiaActual()));
+                    fechaSeleccionada = vistaDiaria.getDiaActual();
+                    actualizarListaEventos(fechaSeleccionada);
+                }
+                case 1 -> {
+                    LocalDate inicioSemana = vistaSemanal.getSemanaActual();
+                    lblTitulo.setText(formatearTituloSemanal(inicioSemana));
+                    // No actualizar fechaSeleccionada al cambiar a vista semanal
+                    actualizarListaEventos(fechaSeleccionada);
+                }
+                case 2 -> {
+                    lblTitulo.setText(formatearTituloMensual(vistaMensual.getMesActual()));
+                    // Mantener la fecha seleccionada actual
+                }
+                case 3 -> {
+                    lblTitulo.setText(String.valueOf(vistaAnual.getAñoActual().getValue()));
+                    // Mantener la fecha seleccionada actual
+                }
+            }
+            actualizarFechaSeleccionada();
+        });
+
+        // Modificar la posición donde se establece el tamaño del splitPane
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-       
-        // --- Crear el JTabbedPane para la región IZQUIERDA del SplitPane ---
+        splitPane.setDividerLocation((int)(getWidth() * 0.8)); // 80% del ancho para el calendario
+        splitPane.setResizeWeight(0.8); // mantiene la proporción al redimensionar
 
-        JTabbedPane tabbedPane = new JTabbedPane(); // Crea el JTabbedPane
-
-        // Al terminar las vistas esto debe ser reemplazado
-        
-        JPanel monthViewPanel = new JPanel();
-        monthViewPanel.add(new JLabel("Vista Mensual del Calendario"));
-
-        JPanel weekViewPanel = new JPanel();
-        weekViewPanel.add(new JLabel("Vista Semanal del Calendario"));
-
-        JPanel dayViewPanel = new JPanel();
-        dayViewPanel.add(new JLabel("Vista Diaria del Calendario"));
-
-        JPanel yearViewPanel = new JPanel();
-        yearViewPanel.add(new JLabel("Vista Anual del Calendario"));
-
-        // --- Añadir las pestañas al JTabbedPane ---
-        tabbedPane.addTab("Mes", monthViewPanel);
-        tabbedPane.addTab("Semana", weekViewPanel);
-        tabbedPane.addTab("Día", dayViewPanel);
-        tabbedPane.addTab("Año", yearViewPanel);
-        
-        // --- Establecer el JTabbedPane como el componente IZQUIERDO del JSplitPane ---
+        // Establecer el TabbedPane como el componente IZQUIERDO del JSplitPane
         splitPane.setLeftComponent(tabbedPane);
         
         JPanel panelDerechoSplit = new JPanel();
+        panelDerechoSplit.setPreferredSize(new Dimension(280, 0));
+        panelDerechoSplit.setLayout(new BorderLayout(0, 10));
+        panelDerechoSplit.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Panel superior para información del día seleccionado
+        JPanel panelInfoDia = new JPanel(new BorderLayout());
+        panelInfoDia.setBorder(BorderFactory.createTitledBorder("Día seleccionado"));
+        lblFechaSeleccionada = new JLabel("No hay día seleccionado");
+        lblFechaSeleccionada.setHorizontalAlignment(SwingConstants.CENTER);
+        panelInfoDia.add(lblFechaSeleccionada, BorderLayout.CENTER);
+        panelDerechoSplit.add(panelInfoDia, BorderLayout.NORTH);
+
+        // Panel central para lista de eventos
+        JPanel panelEventos = new JPanel(new BorderLayout());
+        panelEventos.setBorder(BorderFactory.createTitledBorder("Eventos"));
         
-        panelDerechoSplit.setLayout(new MigLayout("", "[grow, fill]", "[grow, fill]10[]10[grow, fill]"));
-        
-        // 1. JList<Evento> del día/semana/mes seleccionado
-        eventListModel = new DefaultListModel<Evento>(); // Crea el modelo de datos para la lista
-        // TEMPORAL, solo es ejemplo
-        eventList = new JList<Evento>(eventListModel); // Crea el JList con el modelo
-        // Envuelve la lista en un JScrollPane para que tenga barras de desplazamiento
-        JScrollPane eventListScrollPane = new JScrollPane(eventList);
-        
-        // 2. Botones “Añadir”, “Editar”, “Eliminar”
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER)); // Panel simple para agrupar botones
-        JButton btnAnadir = new JButton("Añadir");
-        JButton btnEditar = new JButton("Editar");
+        inicializarListaEventos();
+        JScrollPane scrollEventos = new JScrollPane(eventList);
+        panelEventos.add(scrollEventos, BorderLayout.CENTER);
+
+        // Botones de acciones
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        JButton btnAgregar = new JButton("Agregar");
         JButton btnEliminar = new JButton("Eliminar");
-        buttonPanel.add(btnAnadir);
-        buttonPanel.add(btnEditar);
-        buttonPanel.add(btnEliminar);
         
-        // 3. JTree de subtareas (Al seleccionar un evento de la lista)
-        subtaskRootNode = new DefaultMutableTreeNode("Subtareas"); // Crea el nodo raíz del árbol
-        subtaskListModel = new DefaultTreeModel(subtaskRootNode); // Crea el modelo del árbol
-        // Añade datos de ejemplo (en la vida real, esto sería dinámico según la selección del evento)
-        DefaultMutableTreeNode subtask1 = new DefaultMutableTreeNode("Investigar tema X");
-        subtaskRootNode.add(subtask1);
-        subtask1.add(new DefaultMutableTreeNode("Buscar en Google"));
-        subtask1.add(new DefaultMutableTreeNode("Leer artículos"));
-        DefaultMutableTreeNode subtask2 = new DefaultMutableTreeNode("Preparar presentación");
-        subtaskRootNode.add(subtask2);
-        subtaskList = new JTree(subtaskListModel); // Crea el JTree con el modelo
-        // Envuelve el árbol en un JScrollPane para barras de desplazamiento
-        JScrollPane subtaskListScrollPane = new JScrollPane(subtaskList);
+        btnAgregar.putClientProperty("JButton.buttonType", "roundRect");
+        btnEliminar.putClientProperty("JButton.buttonType", "roundRect");
         
-        // Añade el JList (dentro de su scroll pane) en la primera fila
-        panelDerechoSplit.add(eventListScrollPane, "cell 0 0, grow, wrap");
+        panelBotones.add(btnAgregar);
+        panelBotones.add(btnEliminar);
+        
+        panelEventos.add(panelBotones, BorderLayout.SOUTH);
+        panelDerechoSplit.add(panelEventos, BorderLayout.CENTER);
 
-        // Añade el panel de botones en la segunda fila
-        panelDerechoSplit.add(buttonPanel, "cell 0 1, align center, wrap");
+        // Panel inferior para detalles del evento seleccionado
+        JPanel panelDetalles = new JPanel(new BorderLayout());
+        panelDetalles.setBorder(BorderFactory.createTitledBorder("Detalles del evento"));
+        JTextArea txtDetalles = new JTextArea(5, 0);
+        txtDetalles.setEditable(false);
+        JScrollPane scrollDetalles = new JScrollPane(txtDetalles);
+        panelDetalles.add(scrollDetalles);
+        panelDerechoSplit.add(panelDetalles, BorderLayout.SOUTH);
 
-        // Añade el JTree (dentro de su scroll pane) en la tercera fila
-        panelDerechoSplit.add(subtaskListScrollPane, "cell 0 2, grow, push"); // push: asegura que tome el espacio restante
+        // Configurar eventos
+        eventList.addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                Evento eventoSeleccionado = eventList.getSelectedValue();
+                if (eventoSeleccionado != null) {
+                    String detalles = String.format("""
+                        Título: %s
+                        Fecha: %s
+                        Hora: %s - %s
+                        Descripción: %s""",
+                        eventoSeleccionado.getTitulo(),
+                        eventoSeleccionado.getFecha(),
+                        eventoSeleccionado.getInicio(),
+                        eventoSeleccionado.getFin(),
+                        eventoSeleccionado.getDescripcion());
+                    txtDetalles.setText(detalles);
+                } else {
+                    txtDetalles.setText("");
+                }
+            }
+        });
 
+        btnAgregar.addActionListener(e -> {
+            EventoDialogo dialogo = new EventoDialogo(this, modelo, fechaSeleccionada != null ? fechaSeleccionada : LocalDate.now());
+            dialogo.setVisible(true);
+            actualizarListaEventos(fechaSeleccionada);
+        });
 
-        // Establecer el rightPanel configurado como el componente DERECHO del SplitPane
+        btnEliminar.addActionListener(e -> {
+            Evento eventoSeleccionado = eventList.getSelectedValue();
+            if (eventoSeleccionado != null) {
+                int confirmacion = JOptionPane.showConfirmDialog(
+                    this,
+                    "¿Está seguro de que desea eliminar el evento '" + eventoSeleccionado.getTitulo() + "'?",
+                    "Confirmar eliminación",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE
+                );
+                
+                if (confirmacion == JOptionPane.YES_OPTION) {
+                    modelo.eliminarEvento(eventoSeleccionado);
+                    actualizarListaEventos(fechaSeleccionada);
+                    actualizarVistas();
+                }
+            }
+        });
+
         splitPane.setRightComponent(panelDerechoSplit);
-        
-        splitPane.setRightComponent(panelDerechoSplit);
-        
         
         getContentPane().add(splitPane, BorderLayout.CENTER);
         
         // Panel en la región SUR (inferior)
         JPanel panelSur = new JPanel();
-        // panelSur.add(new javax.swing.JButton("Guardar"));
         getContentPane().add(panelSur, BorderLayout.SOUTH); // Añade el panel al SUR
 
         // Panel en la región ESTE (derecha)
         JPanel panelEste = new JPanel();
-        // panelEste.add(new javax.swing.JList());
         getContentPane().add(panelEste, BorderLayout.EAST); // Añade el panel al ESTE
 
         // Panel en la región OESTE (izquierda)
         JPanel panelOeste = new JPanel();
-        // panelOeste.add(new javax.swing.JTree());
         getContentPane().add(panelOeste, BorderLayout.WEST); // Añade el panel al OESTE
 
         // --- 3. Ajustar el tamaño de la ventana ---
-        // pack() ajusta el tamaño de la ventana para acomodar el tamaño preferido de sus componentes.
-        // Debe llamarse después de añadir todos los componentes.
         pack();
 
-        // Opcional: Establecer un tamaño específico si pack() no es suficiente
-        // setSize(600, 400);
         // Opcional: Centrar la ventana en la pantalla
         setLocationRelativeTo(null);
     }
 
-    /**
-     * This method is called from within the constructor to initialize the form.
-     * WARNING: Do not modify this code. The content of this method is always
-     * regenerated by the Form Editor.
-     */
-    @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">
-    private void initComponents() {
-        // Aquí solo mantenemos las propiedades básicas del JFrame que NO son parte del layout GroupLayout
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+    private void inicializarListaEventos() {
+        eventListModel = new DefaultListModel<>();
+        eventList = new JList<>(eventListModel);
+        eventList.setCellRenderer(new RenderizadorDeListaDeEventos());  // Usar nuestro renderizador personalizado
+    }
 
-        // --- REMOVER O COMENTAR TODO EL CÓDIGO GENERADO POR EL EDITOR PARA GROUPLAYOUT ---
-        // Estas líneas definen el layout usando GroupLayout y son incompatibles con BorderLayout.
-        /*
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 400, Short.MAX_VALUE)
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 300, Short.MAX_VALUE)
-        );
-         */
-        // -----------------------------------------------------------------------------
-        // pack() se llama al final del constructor principal, después de añadir todos los componentes.
-        // Aquí en initComponents() solo mantenemos la configuración inicial del JFrame.
-    }// </editor-fold>
+    private void actualizarInterfaz() {
+        tabbedPane.revalidate();
+        tabbedPane.repaint();
+    }
+
+    private String formatearTituloDiario(LocalDate fecha) {
+        return fecha.format(DateTimeFormatter.ofPattern("d 'de' MMMM yyyy", new Locale("es", "ES")));
+    }
+
+    private String formatearTituloSemanal(LocalDate inicioSemana) {
+        LocalDate finSemana = inicioSemana.plusDays(6);
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("d 'de' MMMM", new Locale("es", "ES"));
+        return fmt.format(inicioSemana) + " - " + fmt.format(finSemana);
+    }
+
+    private String formatearTituloMensual(YearMonth mes) {
+        return mes.format(DateTimeFormatter.ofPattern("MMMM yyyy", new Locale("es", "ES")));
+    }
+
+    public void actualizarListaEventos(LocalDate fecha) {
+        if (fecha != null) {
+            fechaSeleccionada = fecha;
+            actualizarFechaSeleccionada();
+            eventListModel.clear();
+            modelo.getEventos(fecha).forEach(eventListModel::addElement);
+        }
+    }
+
+    private void actualizarFechaSeleccionada() {
+        if (fechaSeleccionada != null) {
+            lblFechaSeleccionada.setText(formatearTituloDiario(fechaSeleccionada));
+        } else {
+            lblFechaSeleccionada.setText("No hay día seleccionado");
+        }
+    }
+
+    private void actualizarVistas() {
+        vistaDiaria.actualizarVista();
+        vistaSemanal.repintarSemana();
+        vistaMensual.repintarMes();
+        vistaAnual.actualizarVista();
+    }
 
     /**
      * @param args the command line arguments
@@ -213,7 +408,6 @@ public class CalendarioDashboard extends javax.swing.JFrame {
         
         UIManager.setLookAndFeel(new com.formdev.flatlaf.FlatLightLaf());
 
-        // Asegúrate de que la creación y visualización del JFrame se hagan en el EDT (Hilo de Despacho de Eventos)
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 new CalendarioDashboard().setVisible(true);

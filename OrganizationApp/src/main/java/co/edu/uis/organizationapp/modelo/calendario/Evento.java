@@ -69,6 +69,8 @@ public class Evento {
         this.color = color;
     }
     
-    
-    
+    @Override
+    public String toString() {
+        return titulo != null ? titulo : "Evento sin título";
+    }
 }
