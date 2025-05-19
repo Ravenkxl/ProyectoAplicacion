@@ -60,37 +60,47 @@ public class CalendarioDashboard extends javax.swing.JFrame {
         // Al inicio del constructor
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setMinimumSize(new Dimension(1200, 800));
+        getContentPane().setLayout(new BorderLayout());
 
-        // Inicializar el modelo y las vistas
+        // Inicializar el modelo y las listas primero
         this.modelo = new ModeloCalendario();
+        inicializarListaEventos();
+
+        // Inicializar el label de fecha seleccionada
+        lblFechaSeleccionada = new JLabel("No hay día seleccionado");
+        lblFechaSeleccionada.setHorizontalAlignment(SwingConstants.CENTER);
+
+        // Inicializar las vistas
         vistaMensual = new VistaPanelMensual(modelo);
         vistaSemanal = new VistaPanelSemanal(modelo);
         vistaDiaria = new VistaPanelDiaria(modelo);
         vistaAnual = new VistaPanelAnual(modelo);
-        
+
+        // Inicializar y configurar el tabbedPane
+        tabbedPane = new JTabbedPane();
+        tabbedPane.addTab("Día", vistaDiaria);
+        tabbedPane.addTab("Semana", vistaSemanal);
+        tabbedPane.addTab("Mes", vistaMensual);
+        tabbedPane.addTab("Año", vistaAnual);
+
+        // Establecer el día actual por defecto al iniciar
+        LocalDate hoy = LocalDate.now();
+        fechaSeleccionada = hoy;
+
+        // Configurar fechas iniciales
+        vistaMensual.setMonth(YearMonth.from(hoy));
+        vistaSemanal.establecerSemana(hoy.with(DayOfWeek.MONDAY));
+        vistaDiaria.establecerDia(hoy);
+        vistaAnual.establecerAño(Year.now());
+
         // Configurar el look and feel
         try {
             UIManager.setLookAndFeel(new FlatLightLaf());
             SwingUtilities.updateComponentTreeUI(this);
         } catch (UnsupportedLookAndFeelException e) {
         }
-        
-        // Configurar el TabbedPane con todas las vistas
-        tabbedPane = new JTabbedPane();
-        tabbedPane.addTab("Día", vistaDiaria);
-        tabbedPane.addTab("Semana", vistaSemanal);
-        tabbedPane.addTab("Mes", vistaMensual);
-        tabbedPane.addTab("Año", vistaAnual);
-        
-        // Configurar fechas iniciales
-        LocalDate hoy = LocalDate.now();
-        vistaMensual.setMonth(YearMonth.from(hoy));
-        vistaSemanal.establecerSemana(hoy.with(DayOfWeek.MONDAY));
-        vistaDiaria.establecerDia(hoy);
-        vistaAnual.establecerAño(Year.now());
 
-        // Establecer el día actual por defecto al iniciar
-        fechaSeleccionada = hoy;
+        // Now it's safe to call these methods
         actualizarFechaSeleccionada();
         actualizarListaEventos(hoy);
 
@@ -204,7 +214,7 @@ public class CalendarioDashboard extends javax.swing.JFrame {
             }
         });
 
-        // Modificar el listener del tabbedPane
+        // Add the change listener after tabbedPane is initialized
         tabbedPane.addChangeListener(e -> {
             switch (tabbedPane.getSelectedIndex()) {
                 case 0 -> {
