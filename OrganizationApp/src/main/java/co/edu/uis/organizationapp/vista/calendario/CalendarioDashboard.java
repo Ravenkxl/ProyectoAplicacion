@@ -61,6 +61,7 @@ public class CalendarioDashboard extends javax.swing.JFrame {
     private JTabbedPane pestañasDerecha;
     private DefaultListModel<TareaCheckBox> modeloTareas;
     private JTextArea txtDetalles;
+    private EventoDialogo eventoD;
 
     public CalendarioDashboard() {
         // Al inicio del constructor
@@ -319,6 +320,11 @@ public class CalendarioDashboard extends javax.swing.JFrame {
         
         panelTareas.add(scrollTareas, BorderLayout.CENTER);
         panelTareas.add(panelBotonesTareas, BorderLayout.SOUTH);
+        
+        btnAgregarTarea.addActionListener(e -> {
+            eventoD = new EventoDialogo(this, modelo, hoy, true);
+            eventoD.setVisible(true);
+        });
         
         // Agregar pestañas
         pestañasDerecha.addTab("Detalles", panelDetalles);

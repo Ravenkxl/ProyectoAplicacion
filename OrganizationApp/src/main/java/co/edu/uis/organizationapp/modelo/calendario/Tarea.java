@@ -6,17 +6,26 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Tarea {
-    private String Titulo;
+    private String titulo;
     private LocalDate fecha;
     private LocalTime inicio, fin;
+    private String descripcion;
     private List<Subtarea> subtareas = new ArrayList<>();
 
-    public String getTitulo() {
-        return Titulo;
+    public String getDescripcion() {
+        return descripcion;
     }
 
-    public void setTitulo(String Titulo) {
-        this.Titulo = Titulo;
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
+    }
+
+    public String getTitulo() {
+        return titulo;
+    }
+
+    public void setTitulo(String titulo) {
+        this.titulo = titulo;
     }
 
     public LocalDate getFecha() {
