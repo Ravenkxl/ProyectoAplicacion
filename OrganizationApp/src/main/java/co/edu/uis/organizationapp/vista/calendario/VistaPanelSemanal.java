@@ -144,7 +144,7 @@ public class VistaPanelSemanal extends JPanel {
         
         // Se colocan los dias en un String de Objetos
 
-        String[] nombresDias = {"Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"};
+        String[] nombresDias = {"Domingo",  "Lunes", "Martes","Miércoles" , "Jueves","Viernes", "Sábado"};
         LocalDate primerDia = weekStart;
         
         for (int i = 0; i < 7; i++) {
