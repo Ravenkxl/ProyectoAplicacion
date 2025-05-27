@@ -311,11 +311,9 @@ public class CalendarioDashboard extends javax.swing.JFrame {
         // Botones para gestionar tareas
         JPanel panelBotonesTareas = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton btnAgregarTarea = new JButton("Nueva Tarea");
-        JButton btnAgregarSubtarea = new JButton("Nueva Subtarea");
         JButton btnEliminarTarea = new JButton("Eliminar");
         
         panelBotonesTareas.add(btnAgregarTarea);
-        panelBotonesTareas.add(btnAgregarSubtarea);
         panelBotonesTareas.add(btnEliminarTarea);
         
         panelTareas.add(scrollTareas, BorderLayout.CENTER);

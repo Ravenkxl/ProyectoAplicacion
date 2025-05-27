@@ -11,7 +11,18 @@ public class Tarea {
     private LocalTime inicio, fin;
     private String descripcion;
     private List<Subtarea> subtareas = new ArrayList<>();
+    private boolean IsTareaCompleted;
 
+    public boolean isIsTareaCompleted() {
+        return IsTareaCompleted;
+    }
+
+    public void setIsTareaCompleted(boolean IsTareaCompleted) {
+        this.IsTareaCompleted = IsTareaCompleted;
+    }
+    
+    
+    
     public String getDescripcion() {
         return descripcion;
     }

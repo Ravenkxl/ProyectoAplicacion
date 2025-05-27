@@ -17,7 +17,7 @@ public class Cronometro extends javax.swing.JFrame {
      */
     public Cronometro() {
         initComponents();
-        t=new Timer(10, acc);
+        t=new Timer(10,acc);
     }
 
     /**
@@ -142,6 +142,7 @@ public class Cronometro extends javax.swing.JFrame {
     private void ActualizarLabel(){
         String Tiempo=(h<=9?"0":"")+h+":"+(m<=9?"0":"")+m+":"+(s<=9?"0":"")+s+":"+(cs<=9?"0":"")+cs;
         lblCronometre.setText(Tiempo);
+        
     }
     /**
      * @param args the command line arguments

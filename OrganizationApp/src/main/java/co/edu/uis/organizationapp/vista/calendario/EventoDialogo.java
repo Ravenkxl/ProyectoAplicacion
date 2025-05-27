@@ -17,6 +17,7 @@ public class EventoDialogo extends JDialog {
     private LocalDate fecha;
     private JTextField txtTitulo;
     private JTextField txtNombre;
+    private JTextField txtNombreSubtarea;
     private JTextArea txtDesc;
     private JDateChooser dateChooser;
     private JSpinner spinnerHoraInicio;
@@ -219,10 +220,27 @@ public class EventoDialogo extends JDialog {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton btnGuardar = new JButton("Guardar");
         JButton btnCancelar = new JButton("Cancelar");
+        JButton btnAgregarSubtarea = new JButton("Nueva Subtarea");
+        buttonPanel.add(btnAgregarSubtarea);
         buttonPanel.add(btnGuardar);
         buttonPanel.add(btnCancelar);
+        
+        btnAgregarSubtarea.addActionListener(e -> {
+         
+        txtNombre = new JTextField(10);
+        Object[] message={
+            "Nombre de la Subtarea",txtNombre
+        };
+        JOptionPane.showConfirmDialog(this, message, "Subtarea", JOptionPane.OK_CANCEL_OPTION);
+        
+        
+        setLocationRelativeTo(null);
 
+            
+        });
+        
         btnGuardar.addActionListener(e -> {
+            
             guardarTarea();
             dispose();
         });
@@ -234,5 +252,6 @@ public class EventoDialogo extends JDialog {
         // Establecer tamaño y posición
         pack();
         setLocationRelativeTo(getOwner());
+        
     }
 }

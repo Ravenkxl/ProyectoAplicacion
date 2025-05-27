@@ -7,6 +7,17 @@ public class Subtarea {
     private String Titulo;
     private LocalDate fecha;
     private LocalTime inicio, fin;
+    private boolean IsSubTareaCompleted;
+
+    public boolean isIsSubTareaCompleted() {
+        return IsSubTareaCompleted;
+    }
+
+    public void setIsSubTareaCompleted(boolean IsSubTareaCompleted) {
+        this.IsSubTareaCompleted = IsSubTareaCompleted;
+    }
+    
+    
 
     public String getTitulo() {
         return Titulo;
