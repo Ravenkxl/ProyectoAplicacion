@@ -30,7 +30,6 @@ public class DayClickListener extends MouseAdapter {
         if (parent instanceof CalendarioDashboard) {
             CalendarioDashboard dashboard = (CalendarioDashboard) parent;
             dashboard.actualizarListaEventos(fecha);
-            dashboard.seleccionarDia(fecha); // Nuevo método para actualizar el día seleccionado
         }
     }
 }

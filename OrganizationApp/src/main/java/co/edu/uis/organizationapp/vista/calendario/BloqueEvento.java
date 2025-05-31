@@ -73,8 +73,9 @@ public class BloqueEvento extends JPanel {
             public void mouseClicked(MouseEvent evt) {
                 // Buscar el CalendarioDashboard padre
                 Container parent = SwingUtilities.getWindowAncestor(BloqueEvento.this);
-                if (parent instanceof CalendarioDashboard) {
-                    ((CalendarioDashboard) parent).mostrarDetallesEvento(evento);
+                if (parent instanceof CalendarioDashboard dashboard) {
+                    dashboard.actualizarListaEventos(evento.getFecha());
+                    dashboard.mostrarDetallesEvento(evento);
                 }
             }
         });
