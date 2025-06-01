@@ -10,6 +10,7 @@ public class Evento {
     private LocalTime inicio, fin;
     private String titulo;
     private String descripcion;
+    private Color color;
 
     public String getDescripcion() {
         return descripcion;
@@ -19,7 +20,23 @@ public class Evento {
         this.descripcion = descripcion;
     }
     private List<Tarea> tareas = new ArrayList<>();
-    private Color color;
+    
+    public void agregarTarea(Tarea tarea) {
+        if (tareas == null) {
+            tareas = new ArrayList<>();
+        }
+        tareas.add(tarea);
+    }
+    
+    public List<Tarea> getTareas() {
+        return tareas != null ? new ArrayList<>(tareas) : new ArrayList<>();
+    }
+    
+    public void eliminarTarea(Tarea tarea) {
+        if (tareas != null) {
+            tareas.remove(tarea);
+        }
+    }
 
     public LocalDate getFecha() {
         return fecha;
@@ -52,22 +69,7 @@ public class Evento {
     public void setTitulo(String titulo) {
         this.titulo = titulo;
     }
-
-    public List<Tarea> getTareas() {
-        return tareas;
-    }
-
-    public void setTareas(List<Tarea> tareas) {
-        this.tareas = tareas;
-    }
     
-    public void agregarTarea(Tarea tarea) {
-        if (tareas == null) {
-            tareas = new ArrayList<>();
-        }
-        tareas.add(tarea);
-    }
-
     public Color getColor() {
         return color;
     }

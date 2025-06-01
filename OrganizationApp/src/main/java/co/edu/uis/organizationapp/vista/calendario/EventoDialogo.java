@@ -3,6 +3,7 @@ package co.edu.uis.organizationapp.vista.calendario;
 import co.edu.uis.organizationapp.modelo.calendario.Evento;
 import co.edu.uis.organizationapp.modelo.calendario.ModeloCalendario;
 import co.edu.uis.organizationapp.modelo.calendario.Tarea;
+import co.edu.uis.organizationapp.modelo.calendario.Subtarea;
 import com.toedter.calendar.JDateChooser;
 import javax.swing.*;
 import java.awt.*;
@@ -15,6 +16,7 @@ public class EventoDialogo extends JDialog {
 
     private ModeloCalendario model;
     private LocalDate fecha;
+    private Evento evento; // Add this field
     private JTextField txtTitulo;
     private JTextField txtNombre;
     private JTextField txtNombreSubtarea;
@@ -23,6 +25,7 @@ public class EventoDialogo extends JDialog {
     private JSpinner spinnerHoraInicio;
     private JSpinner spinnerHoraFin;
     private boolean modificado = false;
+    private Tarea tareaEditando = null; // Agregar esta variable de clase
 
     public EventoDialogo(JFrame owner, ModeloCalendario model, LocalDate fecha, boolean isTarea) {
         super(owner, "Evento para " + fecha, true);
@@ -158,13 +161,59 @@ public class EventoDialogo extends JDialog {
     }
     
    private void guardarTarea() {
-        Tarea task = new Tarea();
-        task.setFecha(dateChooser.getDate().toInstant()
-                .atZone(ZoneId.systemDefault()).toLocalDate());
-        task.setTitulo(txtNombre.getText());
-        task.setDescripcion(txtDesc.getText());
-        task.setInicio(toLocalTime((Date) spinnerHoraInicio.getValue()));
-        task.setFin(toLocalTime((Date) spinnerHoraFin.getValue()));
+        String nombreTarea = txtNombre.getText().trim();
+        
+        if (nombreTarea.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                "El nombre de la tarea no puede estar vacío",
+                "Error",
+                JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Si estamos editando, actualizar la tarea existente
+        if (tareaEditando != null) {
+            tareaEditando.setTitulo(nombreTarea);
+            tareaEditando.setDescripcion(txtDesc.getText());
+            tareaEditando.setFecha(dateChooser.getDate().toInstant()
+                    .atZone(ZoneId.systemDefault()).toLocalDate());
+            tareaEditando.setInicio(toLocalTime((Date) spinnerHoraInicio.getValue()));
+            tareaEditando.setFin(toLocalTime((Date) spinnerHoraFin.getValue()));
+            tareaEditando.setFechaLimite(LocalDateTime.of(
+                tareaEditando.getFecha(),
+                tareaEditando.getFin()
+            ));
+            
+            // Actualizar el evento en el modelo
+            model.actualizarEvento(evento);
+        } else {
+            // Crear nueva tarea
+            Tarea nuevaTarea = new Tarea();
+            nuevaTarea.setTitulo(nombreTarea);
+            nuevaTarea.setDescripcion(txtDesc.getText());
+            nuevaTarea.setFecha(dateChooser.getDate().toInstant()
+                    .atZone(ZoneId.systemDefault()).toLocalDate());
+            nuevaTarea.setInicio(toLocalTime((Date) spinnerHoraInicio.getValue()));
+            nuevaTarea.setFin(toLocalTime((Date) spinnerHoraFin.getValue()));
+            nuevaTarea.setFechaLimite(LocalDateTime.of(
+                nuevaTarea.getFecha(),
+                nuevaTarea.getFin()
+            ));
+
+            if (evento != null) {
+                evento.agregarTarea(nuevaTarea);
+                model.actualizarEvento(evento);
+            } else {
+                evento = new Evento();
+                evento.setFecha(nuevaTarea.getFecha());
+                evento.setTitulo("Evento: " + nuevaTarea.getTitulo());
+                evento.setDescripcion(nuevaTarea.getDescripcion());
+                evento.setInicio(nuevaTarea.getInicio());
+                evento.setFin(nuevaTarea.getFin());
+                evento.agregarTarea(nuevaTarea);
+                model.addEvento(evento);
+            }
+        }
         modificado = true;
     }
 
@@ -221,24 +270,53 @@ public class EventoDialogo extends JDialog {
         JButton btnGuardar = new JButton("Guardar");
         JButton btnCancelar = new JButton("Cancelar");
         JButton btnAgregarSubtarea = new JButton("Nueva Subtarea");
+        
+        // Ocultar botón de subtarea inicialmente - solo se muestra al editar
+        btnAgregarSubtarea.setVisible(false);
+        
+        if (evento != null) {
+            // Si estamos editando, mostrar el botón de subtarea
+            btnAgregarSubtarea.setVisible(true);
+        }
+
         buttonPanel.add(btnAgregarSubtarea);
         buttonPanel.add(btnGuardar);
         buttonPanel.add(btnCancelar);
         
         btnAgregarSubtarea.addActionListener(e -> {
-         
-        txtNombre = new JTextField(10);
-        Object[] message={
-            "Nombre de la Subtarea",txtNombre
-        };
-        JOptionPane.showConfirmDialog(this, message, "Subtarea", JOptionPane.OK_CANCEL_OPTION);
-        
-        
-        setLocationRelativeTo(null);
-
+        if (evento != null) {
+            JTextField txtSubtarea = new JTextField(20);
+            Object[] message = {
+                "Nombre de la Subtarea:", txtSubtarea
+            };
             
-        });
-        
+            int option = JOptionPane.showConfirmDialog(
+                this, 
+                message, 
+                "Nueva Subtarea", 
+                JOptionPane.OK_CANCEL_OPTION, 
+                JOptionPane.PLAIN_MESSAGE
+            );
+                
+            if (option == JOptionPane.OK_OPTION && !txtSubtarea.getText().trim().isEmpty()) {
+                // Crear la nueva subtarea
+                Subtarea subtarea = new Subtarea();
+                subtarea.setTitulo(txtSubtarea.getText().trim());
+                
+                // Obtener la tarea actual que se está editando
+                if (tareaEditando != null) {
+                    // Agregar subtarea a la tarea existente
+                    subtarea.setTareaPadre(tareaEditando);
+                    tareaEditando.agregarSubtarea(subtarea);
+                    
+                    // Actualizar el evento en el modelo
+                    model.actualizarEvento(evento);
+                    modificado = true;
+                }
+            }
+        }
+    });
+
         btnGuardar.addActionListener(e -> {
             
             guardarTarea();
@@ -253,5 +331,62 @@ public class EventoDialogo extends JDialog {
         pack();
         setLocationRelativeTo(getOwner());
         
+    }
+
+    public void editarTarea(Tarea tarea) {
+        if (tarea != null) {
+            this.tareaEditando = tarea; // Guardar referencia a la tarea que estamos editando
+            
+            txtNombre.setText(tarea.getTitulo());
+            txtDesc.setText(tarea.getDescripcion());
+            if (tarea.getFecha() != null) {
+                dateChooser.setDate(java.sql.Date.valueOf(tarea.getFecha()));
+            }
+            if (tarea.getInicio() != null) {
+                Date inicioDate = Date.from(tarea.getInicio().atDate(LocalDate.now())
+                    .atZone(ZoneId.systemDefault()).toInstant());
+                spinnerHoraInicio.setValue(inicioDate);
+            }
+            if (tarea.getFin() != null) {
+                Date finDate = Date.from(tarea.getFin().atDate(LocalDate.now())
+                    .atZone(ZoneId.systemDefault()).toInstant());
+                spinnerHoraFin.setValue(finDate);
+            }
+            
+            // Mostrar botón de subtarea
+            for (Component comp : getContentPane().getComponents()) {
+                if (comp instanceof JPanel) {
+                    JPanel panel = (JPanel)comp;
+                    for (Component btn : panel.getComponents()) {
+                        if (btn instanceof JButton && ((JButton)btn).getText().equals("Nueva Subtarea")) {
+                            btn.setVisible(true);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public void setEvento(Evento evento) {
+        this.evento = evento;
+        // Pre-fill fields with event data
+        if (evento != null) {
+            txtNombre.setText(evento.getTitulo());
+            txtDesc.setText(evento.getDescripcion());
+            if (evento.getFecha() != null) {
+                dateChooser.setDate(java.sql.Date.valueOf(evento.getFecha()));
+            }
+            if (evento.getInicio() != null) {
+                Date inicioDate = Date.from(evento.getInicio().atDate(LocalDate.now())
+                    .atZone(ZoneId.systemDefault()).toInstant());
+                spinnerHoraInicio.setValue(inicioDate);
+            }
+            if (evento.getFin() != null) {
+                Date finDate = Date.from(evento.getFin().atDate(LocalDate.now())
+                    .atZone(ZoneId.systemDefault()).toInstant());
+                spinnerHoraFin.setValue(finDate);
+            }
+        }
     }
 }

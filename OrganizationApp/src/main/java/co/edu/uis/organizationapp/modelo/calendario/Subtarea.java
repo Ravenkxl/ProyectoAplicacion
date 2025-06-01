@@ -1,55 +1,55 @@
 package co.edu.uis.organizationapp.modelo.calendario;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 
 public class Subtarea {
-    private String Titulo;
-    private LocalDate fecha;
-    private LocalTime inicio, fin;
-    private boolean IsSubTareaCompleted;
+    private String titulo;
+    private String descripcion;
+    private boolean completada;
+    private LocalDateTime fechaCompletada;
+    private Tarea tareaPadre;
 
-    public boolean isIsSubTareaCompleted() {
-        return IsSubTareaCompleted;
+    public Subtarea() {
     }
-
-    public void setIsSubTareaCompleted(boolean IsSubTareaCompleted) {
-        this.IsSubTareaCompleted = IsSubTareaCompleted;
-    }
-    
-    
 
     public String getTitulo() {
-        return Titulo;
+        return titulo;
     }
 
-    public void setTitulo(String Titulo) {
-        this.Titulo = Titulo;
+    public void setTitulo(String titulo) {
+        this.titulo = titulo;
     }
 
-    public LocalDate getFecha() {
-        return fecha;
+    public String getDescripcion() {
+        return descripcion;
     }
 
-    public void setFecha(LocalDate fecha) {
-        this.fecha = fecha;
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
     }
 
-    public LocalTime getInicio() {
-        return inicio;
+    public boolean isCompletada() {
+        return completada;
     }
 
-    public void setInicio(LocalTime inicio) {
-        this.inicio = inicio;
+    public void marcarComoCompletada() {
+        this.completada = true;
+        this.fechaCompletada = LocalDateTime.now();
     }
 
-    public LocalTime getFin() {
-        return fin;
+    public void setCompletada(boolean completada) {
+        this.completada = completada;
     }
 
-    public void setFin(LocalTime fin) {
-        this.fin = fin;
+    public void setFechaCompletada(LocalDateTime fechaCompletada) {
+        this.fechaCompletada = fechaCompletada;
     }
-    
-    
+
+    public Tarea getTareaPadre() {
+        return tareaPadre;
+    }
+
+    public void setTareaPadre(Tarea tareaPadre) {
+        this.tareaPadre = tareaPadre;
+    }
 }

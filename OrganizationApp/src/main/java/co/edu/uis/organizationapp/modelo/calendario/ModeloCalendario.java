@@ -33,6 +33,19 @@ public class ModeloCalendario {
         }
     }
 
+    public void actualizarEvento(Evento evento) {
+        // Primero eliminar el evento existente en la fecha del evento
+        List<Evento> eventosDelDia = eventos.get(evento.getFecha());
+        if (eventosDelDia != null) {
+            eventosDelDia.removeIf(e -> e.getTitulo().equals(evento.getTitulo()));
+            if (eventosDelDia.isEmpty()) {
+                eventos.remove(evento.getFecha());
+            }
+        }
+        // Luego añadir el evento actualizado
+        addEvento(evento);
+    }
+
     private void crearEventosDePrueba() {
         // Evento para hoy
         Evento eventoHoy = new Evento();

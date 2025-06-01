@@ -13,6 +13,7 @@ import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
@@ -51,6 +52,7 @@ import com.formdev.flatlaf.FlatLightLaf;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import co.edu.uis.organizationapp.modelo.calendario.Tarea;
+import co.edu.uis.organizationapp.modelo.calendario.Subtarea;
 import java.util.List;
 import javax.swing.BoxLayout;
 import javax.swing.JWindow;
@@ -351,6 +353,7 @@ public class CalendarioDashboard extends javax.swing.JFrame {
 
     public void actualizarListaEventos(LocalDate fecha) {
         if (fecha != null) {
+            Evento eventoSeleccionadoActual = eventList.getSelectedValue();
             fechaSeleccionada = fecha;
             actualizarFechaSeleccionada();
             
@@ -365,8 +368,17 @@ public class CalendarioDashboard extends javax.swing.JFrame {
             List<Evento> eventosDelDia = modelo.getEventos(fecha);
             eventosDelDia.forEach(eventListModel::addElement);
             
-            // Seleccionar primer evento si existe
-            if (!eventosDelDia.isEmpty()) {
+            // Mantener la selección del evento actual si existe
+            if (eventoSeleccionadoActual != null) {
+                // Buscar el mismo evento en la lista actualizada
+                for (int i = 0; i < eventListModel.size(); i++) {
+                    if (eventListModel.get(i).equals(eventoSeleccionadoActual)) {
+                        eventList.setSelectedIndex(i);
+                        mostrarDetallesEvento(eventoSeleccionadoActual, false);
+                        break;
+                    }
+                }
+            } else if (!eventosDelDia.isEmpty()) {
                 eventList.setSelectedIndex(0);
                 mostrarDetallesEvento(eventosDelDia.get(0), false);
             } else {
@@ -423,7 +435,19 @@ public class CalendarioDashboard extends javax.swing.JFrame {
             modeloTareas.clear();
             if (evento.getTareas() != null) {
                 for (Tarea tarea : evento.getTareas()) {
-                    modeloTareas.addElement(new TareaCheckBox(tarea));
+                    // Agregar la tarea principal
+                    TareaCheckBox tareaCheckBox = new TareaCheckBox(tarea);
+                    modeloTareas.addElement(tareaCheckBox);
+                    
+                    // Agregar sus subtareas
+                    if (tarea.getSubtareas() != null) {
+                        for (Subtarea subtarea : tarea.getSubtareas()) {
+                            TareaCheckBox subtareaCheckBox = new TareaCheckBox(null);
+                            subtareaCheckBox.setSubtarea(subtarea);
+                            subtareaCheckBox.setTareaPadre(tareaCheckBox);
+                            modeloTareas.addElement(subtareaCheckBox);
+                        }
+                    }
                 }
             }
         }
@@ -550,14 +574,127 @@ public class CalendarioDashboard extends javax.swing.JFrame {
         panelDerechoSplit.add(panelPrincipal, BorderLayout.CENTER);
         
         // Configurar acciones de los botones
-        btnAgregarTarea.addActionListener(e -> agregarNuevaTarea());
-        btnEditarTarea.addActionListener(e -> {
-            TareaCheckBox tarea = listaTareas.getSelectedValue();
-            if (tarea != null) editarTarea(tarea);
+        btnAgregarTarea.addActionListener(e -> {
+            Evento eventoSeleccionado = eventList.getSelectedValue();
+            if (eventoSeleccionado != null) {
+                EventoDialogo dialogo = new EventoDialogo(this, modelo, eventoSeleccionado.getFecha(), true);
+                dialogo.setEvento(eventoSeleccionado);
+                dialogo.setVisible(true);
+                if (dialogo.fueModificado()) {
+                    // Actualizar la lista de eventos y forzar la actualización de detalles
+                    actualizarListaEventos(fechaSeleccionada);
+                    mostrarDetallesEvento(eventoSeleccionado, false);
+                    eventList.setSelectedValue(eventoSeleccionado, true);
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, 
+                    "Seleccione un evento para agregar una tarea",
+                    "Aviso",
+                    JOptionPane.INFORMATION_MESSAGE);
+            }
         });
+
+        btnEditarTarea.addActionListener(e -> {
+            TareaCheckBox tareaSeleccionada = listaTareas.getSelectedValue();
+            if (tareaSeleccionada != null) {
+                Evento eventoSeleccionado = eventList.getSelectedValue();
+                
+                if (tareaSeleccionada.isSubtarea()) {
+                    // Si es una subtarea, mostrar diálogo simple para editar nombre
+                    JTextField txtSubtarea = new JTextField(20);
+                    txtSubtarea.setText(tareaSeleccionada.getSubtarea().getTitulo());
+                    Object[] message = {
+                        "Nombre de la Subtarea:", txtSubtarea
+                    };
+                    
+                    int option = JOptionPane.showConfirmDialog(
+                        this, 
+                        message, 
+                        "Editar Subtarea", 
+                        JOptionPane.OK_CANCEL_OPTION, 
+                        JOptionPane.PLAIN_MESSAGE
+                    );
+                    
+                    if (option == JOptionPane.OK_OPTION && !txtSubtarea.getText().trim().isEmpty()) {
+                        tareaSeleccionada.getSubtarea().setTitulo(txtSubtarea.getText().trim());
+                        modelo.actualizarEvento(eventoSeleccionado);
+                        actualizarListaEventos(fechaSeleccionada);
+                        mostrarDetallesEvento(eventoSeleccionado, false);
+                    }
+                } else {
+                    // Si es una tarea principal, mostrar el diálogo completo
+                    EventoDialogo dialogo = new EventoDialogo(this, modelo, fechaSeleccionada, true);
+                    dialogo.setEvento(eventoSeleccionado);
+                    dialogo.editarTarea(tareaSeleccionada.getTarea());
+                    dialogo.setVisible(true);
+                    if (dialogo.fueModificado()) {
+                        actualizarListaEventos(fechaSeleccionada);
+                        mostrarDetallesEvento(eventoSeleccionado, false);
+                    }
+                }
+            }
+        });
+
         btnEliminarTarea.addActionListener(e -> {
-            TareaCheckBox tarea = listaTareas.getSelectedValue();
-            if (tarea != null) eliminarTarea(tarea);
+            TareaCheckBox tareaSeleccionada = listaTareas.getSelectedValue();
+            if (tareaSeleccionada != null) {
+                Evento eventoSeleccionado = eventList.getSelectedValue();
+                if (eventoSeleccionado != null) {
+                    String mensaje;
+                    if (tareaSeleccionada.isSubtarea()) {
+                        mensaje = "¿Está seguro de eliminar esta subtarea?";
+                    } else {
+                        mensaje = "¿Está seguro de eliminar esta tarea?";
+                    }
+
+                    int confirmacion = JOptionPane.showConfirmDialog(
+                        this,
+                        mensaje,
+                        "Confirmar eliminación",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.WARNING_MESSAGE
+                    );
+                    
+                    if (confirmacion == JOptionPane.YES_OPTION) {
+                        if (tareaSeleccionada.isSubtarea()) {
+                            // Eliminar subtarea
+                            Tarea tareaPadre = tareaSeleccionada.getSubtarea().getTareaPadre();
+                            tareaPadre.eliminarSubtarea(tareaSeleccionada.getSubtarea());
+                        } else {
+                            // Eliminar tarea principal
+                            eventoSeleccionado.eliminarTarea(tareaSeleccionada.getTarea());
+                        }
+                        modeloTareas.removeElement(tareaSeleccionada);
+                        modelo.actualizarEvento(eventoSeleccionado);
+                        mostrarDetallesEvento(eventoSeleccionado, false);
+                    }
+                }
+            }
+        });
+        
+        // Agregar listener para el checkbox de las tareas
+        listaTareas.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int index = listaTareas.locationToIndex(e.getPoint());
+                if (index >= 0) {
+                    TareaCheckBox tarea = modeloTareas.getElementAt(index);
+                    Rectangle bounds = listaTareas.getCellBounds(index, index);
+                    if (bounds != null) {
+                        // Ajustar la zona de click según si es subtarea o no
+                        int checkboxX = tarea.isSubtarea() ? bounds.x + 35 : bounds.x + 5;
+                        if (e.getX() >= checkboxX && e.getX() <= checkboxX + 20) {
+                            tarea.setCompletada(!tarea.isCompletada());
+                            // Guardar el cambio en el modelo
+                            Evento eventoSeleccionado = eventList.getSelectedValue();
+                            if (eventoSeleccionado != null) {
+                                modelo.actualizarEvento(eventoSeleccionado);
+                            }
+                            listaTareas.repaint();
+                        }
+                    }
+                }
+            }
         });
     }
 
