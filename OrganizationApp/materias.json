@@ -1,0 +1,32 @@
+{
+  "a": {
+    "color": {
+      "rgb": -6684673
+    },
+    "temas": {
+      "a": ""
+    },
+    "notas": [],
+    "acumulado": 0.0
+  },
+  "programacion": {
+    "color": {
+      "rgb": -6697729
+    },
+    "temas": {
+      "encapsulacion": ""
+    },
+    "notas": [],
+    "acumulado": 0.0
+  },
+  "m": {
+    "color": {
+      "rgb": -6710887
+    },
+    "temas": {
+      "m": ""
+    },
+    "notas": [],
+    "acumulado": 0.0
+  }
+}
