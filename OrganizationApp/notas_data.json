@@ -1,4 +1,25 @@
 {
+  "Programacion": {
+    "color": {
+      "rgb": -10066177
+    },
+    "temas": {
+      "Encapsulacion": "Encapsulacion \nmxmxmxm\n"
+    },
+    "notas": [
+      {
+        "titulo": "a",
+        "nota": 3.0,
+        "porcentaje": 20.0
+      },
+      {
+        "titulo": "x",
+        "nota": 3.0,
+        "porcentaje": 10.0
+      }
+    ],
+    "acumulado": 0.9
+  },
   "Calculo": {
     "color": {
       "rgb": -3355393
@@ -11,8 +32,13 @@
         "titulo": "Parcial",
         "nota": 1.0,
         "porcentaje": 20.0
+      },
+      {
+        "titulo": "trabajo",
+        "nota": 4.0,
+        "porcentaje": 10.0
       }
     ],
-    "acumulado": 1.0
+    "acumulado": 0.6000000000000001
   }
 }
