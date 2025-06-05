@@ -5,7 +5,6 @@
 package co.edu.uis.organizationapp.cronometro;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import javax.swing.Timer;
 /**
  *
  * @author Karol Hernandez
@@ -15,9 +14,17 @@ public class Cronometro extends javax.swing.JFrame {
     /**
      * Creates new form Cronometro
      */
+    private Thread cronometroThread;
+    private volatile boolean corriendo = false;
+    private volatile boolean pausado = false;
+    private long startTime = 0L;
+    private long tiempoAcumulado = 0L;
+
     public Cronometro() {
         initComponents();
-        t=new Timer(10,acc);    
+        actualizarLabel(0);
+        btnPause.setEnabled(false);
+        btnStop.setEnabled(false);
     }
 
     /**
@@ -117,33 +124,68 @@ public class Cronometro extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-    private Timer t;
-    private int h, m, s, cs;
-    private ActionListener acc = new  ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            cs++;
-            if (cs==100){
-                cs=0;
-                ++s;
-            }
-            if(s==60){
-                s=0;
-                
-                ++m;
-            }
-            if(m==60){
-                m=0;
-                ++h;
-            }
-            ActualizarLabel();
+
+    private void iniciarCronometro() {
+        if (cronometroThread != null && cronometroThread.isAlive()) {
+            // Si ya está corriendo, reiniciar valores
+            tiempoAcumulado = 0L;
+            startTime = System.nanoTime();
+            pausado = false;
+            corriendo = true;
+            return;
         }
-    };
-    private void ActualizarLabel(){
-        String Tiempo=(h<=9?"0":"")+h+":"+(m<=9?"0":"")+m+":"+(s<=9?"0":"")+s+":"+(cs<=9?"0":"")+cs;
-        lblCronometre.setText(Tiempo);
-        
+        corriendo = true;
+        pausado = false;
+        tiempoAcumulado = 0L;
+        startTime = System.nanoTime();
+        cronometroThread = new Thread(() -> {
+            while (corriendo) {
+                if (!pausado) {
+                    long tiempoTranscurrido = tiempoAcumulado + (System.nanoTime() - startTime);
+                    javax.swing.SwingUtilities.invokeLater(() -> actualizarLabel(tiempoTranscurrido));
+                }
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+        });
+        cronometroThread.start();
     }
+
+    private void pausarCronometro() {
+        pausado = true;
+        tiempoAcumulado += (System.nanoTime() - startTime);
+    }
+
+    private void reanudarCronometro() {
+        pausado = false;
+        startTime = System.nanoTime();
+    }
+
+    private void detenerCronometro() {
+        corriendo = false;
+        pausado = false;
+        if (cronometroThread != null) {
+            cronometroThread.interrupt();
+        }
+        tiempoAcumulado = 0L;
+        actualizarLabel(0);
+    }
+
+    private void actualizarLabel(long nanos) {
+        long totalCentis = nanos / 10_000_000L;
+        long cs = totalCentis % 100;
+        long totalSeconds = totalCentis / 100;
+        long s = totalSeconds % 60;
+        long totalMinutes = totalSeconds / 60;
+        long m = totalMinutes % 60;
+        long h = totalMinutes / 60;
+        String Tiempo = String.format("%02d:%02d:%02d:%02d", h, m, s, cs);
+        lblCronometre.setText(Tiempo);
+    }
+
     /**
      * @param args the command line arguments
      */
@@ -178,30 +220,34 @@ public class Cronometro extends javax.swing.JFrame {
             }
         });
     }
+
     private void btnStartActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStartActionPerformed
-        t.start();
-        btnStart.setEnabled(false);//Para que no se pueda volver a presionar el boton despues de iniciado
-        btnStart.setText("Reiniciar");
+        if (!corriendo) {
+            iniciarCronometro();
+            btnStart.setText("Reiniciar");
+        } else {
+            tiempoAcumulado = 0L;
+            startTime = System.nanoTime();
+            actualizarLabel(0);
+            reanudarCronometro();
+        }
+        btnStart.setEnabled(false);
         btnPause.setEnabled(true);
         btnStop.setEnabled(true);
     }//GEN-LAST:event_btnStartActionPerformed
 
     private void btnStopActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStopActionPerformed
-        if(t.isRunning()){
-            t.stop();
-            btnStart.setEnabled(true);
-        }
+        detenerCronometro();
+        btnStart.setEnabled(true);
         btnStart.setText("Iniciar");
         btnPause.setEnabled(false);
         btnStop.setEnabled(false);
-        h=0;m=0;s=0;cs=0;
-        ActualizarLabel();
     }//GEN-LAST:event_btnStopActionPerformed
 
     private void btnPauseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPauseActionPerformed
-       t.stop();
-       btnStart.setEnabled(true);
-       btnPause.setEnabled(false);
+        pausarCronometro();
+        btnStart.setEnabled(true);
+        btnPause.setEnabled(false);
     }//GEN-LAST:event_btnPauseActionPerformed
 
 
