@@ -15,6 +15,7 @@ public class Tarea {
     private LocalDateTime fechaLimite;
     private boolean completada;
     private LocalDateTime fechaCompletada;
+    private int puntosOtorgados = 0;
 
     public Tarea(String titulo) {
         this.titulo = titulo;
@@ -151,5 +152,13 @@ public class Tarea {
                 setCompletada(todasCompletadas);
             }
         }
+    }
+
+    public int getPuntosOtorgados() {
+        return puntosOtorgados;
+    }
+
+    public void setPuntosOtorgados(int puntosOtorgados) {
+        this.puntosOtorgados = puntosOtorgados;
     }
 }

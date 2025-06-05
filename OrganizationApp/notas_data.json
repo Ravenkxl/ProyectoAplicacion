@@ -1,0 +1,18 @@
+{
+  "Calculo": {
+    "color": {
+      "rgb": -3355393
+    },
+    "temas": {
+      "Aplicaciones": ""
+    },
+    "notas": [
+      {
+        "titulo": "Parcial",
+        "nota": 1.0,
+        "porcentaje": 20.0
+      }
+    ],
+    "acumulado": 1.0
+  }
+}

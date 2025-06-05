@@ -9,6 +9,20 @@
     "notas": [],
     "acumulado": 0.0
   },
+  "DSAD": {
+    "color": {
+      "rgb": -3342592
+    },
+    "temas": {},
+    "notas": [
+      {
+        "titulo": "DASD",
+        "nota": 1.0,
+        "porcentaje": 12.0
+      }
+    ],
+    "acumulado": 1.0
+  },
   "programacion": {
     "color": {
       "rgb": -6697729

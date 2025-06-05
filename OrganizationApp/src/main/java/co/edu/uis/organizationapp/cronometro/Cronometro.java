@@ -5,6 +5,9 @@
 package co.edu.uis.organizationapp.cronometro;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import co.edu.uis.organizationapp.modelo.Usuario;
+import co.edu.uis.organizationapp.modelo.UsuarioManager;
+import javax.swing.JOptionPane;
 /**
  *
  * @author Karol Hernandez
@@ -19,12 +22,20 @@ public class Cronometro extends javax.swing.JFrame {
     private volatile boolean pausado = false;
     private long startTime = 0L;
     private long tiempoAcumulado = 0L;
+    private Usuario usuario;
+    private long ultimosPuntosOtorgados = 0L;
+    private static final int SEGUNDOS_PARA_PUNTO = 600; // 10 minutos
+    private static final int PUNTOS_POR_BLOQUE = 10;
+    private javax.swing.JLabel lblPuntos;
 
     public Cronometro() {
         initComponents();
+        usuario = UsuarioManager.cargarUsuario();
         actualizarLabel(0);
+        actualizarPuntosUI();
         btnPause.setEnabled(false);
         btnStop.setEnabled(false);
+        setTitle("Cronómetro - Puntos: " + usuario.getPuntos());
     }
 
     /**
@@ -42,6 +53,7 @@ public class Cronometro extends javax.swing.JFrame {
         btnPause = new javax.swing.JButton();
         btnStart = new javax.swing.JButton();
         btnStop = new javax.swing.JButton();
+        lblPuntos = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -54,6 +66,11 @@ public class Cronometro extends javax.swing.JFrame {
         jLabel4.setFont(new java.awt.Font("Segoe UI", 0, 24)); // NOI18N
         jLabel4.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel4.setText("Cronómetro");
+
+        lblPuntos.setFont(new java.awt.Font("Segoe UI", 0, 18));
+        lblPuntos.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        lblPuntos.setText("Puntos: 0");
+        lblPuntos.setForeground(new java.awt.Color(0, 120, 212));
 
         btnPause.setText("Pausar");
         btnPause.addActionListener(new java.awt.event.ActionListener() {
@@ -86,7 +103,8 @@ public class Cronometro extends javax.swing.JFrame {
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(lblCronometre, javax.swing.GroupLayout.PREFERRED_SIZE, 141, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 141, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 141, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(lblPuntos, javax.swing.GroupLayout.PREFERRED_SIZE, 141, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(75, 75, 75))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                         .addComponent(btnStart)
@@ -101,7 +119,9 @@ public class Cronometro extends javax.swing.JFrame {
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addGap(21, 21, 21)
                 .addComponent(jLabel4)
-                .addGap(18, 18, 18)
+                .addGap(10, 10, 10)
+                .addComponent(lblPuntos)
+                .addGap(8, 8, 8)
                 .addComponent(lblCronometre)
                 .addGap(36, 36, 36)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -127,22 +147,24 @@ public class Cronometro extends javax.swing.JFrame {
 
     private void iniciarCronometro() {
         if (cronometroThread != null && cronometroThread.isAlive()) {
-            // Si ya está corriendo, reiniciar valores
             tiempoAcumulado = 0L;
             startTime = System.nanoTime();
             pausado = false;
             corriendo = true;
+            ultimosPuntosOtorgados = 0L;
             return;
         }
         corriendo = true;
         pausado = false;
         tiempoAcumulado = 0L;
         startTime = System.nanoTime();
+        ultimosPuntosOtorgados = 0L;
         cronometroThread = new Thread(() -> {
             while (corriendo) {
                 if (!pausado) {
                     long tiempoTranscurrido = tiempoAcumulado + (System.nanoTime() - startTime);
                     javax.swing.SwingUtilities.invokeLater(() -> actualizarLabel(tiempoTranscurrido));
+                    otorgarPuntosSiCorresponde(tiempoTranscurrido);
                 }
                 try {
                     Thread.sleep(10);
@@ -152,6 +174,20 @@ public class Cronometro extends javax.swing.JFrame {
             }
         });
         cronometroThread.start();
+    }
+
+    private void otorgarPuntosSiCorresponde(long nanos) {
+        long totalSeconds = nanos / 1_000_000_000L;
+        long bloques = totalSeconds / SEGUNDOS_PARA_PUNTO;
+        if (bloques > ultimosPuntosOtorgados) {
+            usuario.sumarPuntos(PUNTOS_POR_BLOQUE);
+            UsuarioManager.guardarUsuario(usuario);
+            ultimosPuntosOtorgados = bloques;
+            setTitle("Cronómetro - Puntos: " + usuario.getPuntos());
+            actualizarPuntosUI();
+            animarPuntosGanados();
+            JOptionPane.showMessageDialog(this, "¡Felicidades! Has ganado " + PUNTOS_POR_BLOQUE + " puntos por estudiar 10 minutos.", "Puntos otorgados", JOptionPane.INFORMATION_MESSAGE);
+        }
     }
 
     private void pausarCronometro() {
@@ -171,6 +207,7 @@ public class Cronometro extends javax.swing.JFrame {
             cronometroThread.interrupt();
         }
         tiempoAcumulado = 0L;
+        ultimosPuntosOtorgados = 0L;
         actualizarLabel(0);
     }
 
@@ -184,6 +221,21 @@ public class Cronometro extends javax.swing.JFrame {
         long h = totalMinutes / 60;
         String Tiempo = String.format("%02d:%02d:%02d:%02d", h, m, s, cs);
         lblCronometre.setText(Tiempo);
+    }
+
+    private void actualizarPuntosUI() {
+        lblPuntos.setText("Puntos: " + usuario.getPuntos());
+    }
+
+    private void animarPuntosGanados() {
+        java.awt.Color original = lblPuntos.getForeground();
+        lblPuntos.setForeground(new java.awt.Color(0, 180, 0));
+        new Thread(() -> {
+            try {
+                Thread.sleep(800);
+            } catch (InterruptedException ignored) {}
+            javax.swing.SwingUtilities.invokeLater(() -> lblPuntos.setForeground(original));
+        }).start();
     }
 
     /**

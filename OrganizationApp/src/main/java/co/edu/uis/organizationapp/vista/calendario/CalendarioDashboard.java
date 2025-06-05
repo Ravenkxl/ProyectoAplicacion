@@ -1,11 +1,14 @@
 package co.edu.uis.organizationapp.vista.calendario;
 
 import co.edu.uis.organizationapp.modelo.calendario.*;
+import co.edu.uis.organizationapp.modelo.Usuario;
+import co.edu.uis.organizationapp.modelo.UsuarioManager;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
@@ -39,31 +42,18 @@ public class CalendarioDashboard extends JFrame {
     private JButton btnAgregarTarea, btnEliminarTarea, btnAgregarSubtarea;
     private Evento eventoActual;
 
+    private Usuario usuario;
+    private JLabel lblPuntosUsuario;
+
     // Constructor and initial setup
     public CalendarioDashboard() {
         setupLookAndFeel();
         setupWindow();
         initializeModels();
-        // Intentar cargar datos al iniciar
-        // try {
-        //     CalendarioFormateador.cargarModelo(modelo, "calendario_data.json");
-        // } catch (Exception e) {
-        //     System.err.println("No se pudo cargar el calendario: " + e.getMessage());
-        // }
+        usuario = UsuarioManager.cargarUsuario();
         initializeComponents();
         setupLayout();
         loadInitialData();
-        // Guardar automáticamente al cerrar
-        // this.addWindowListener(new WindowAdapter() {
-        //     @Override
-        //     public void windowClosing(WindowEvent e) {
-        //         try {
-        //             CalendarioFormateador.guardarModelo(modelo, "calendario_data.json");
-        //         } catch (Exception ex) {
-        //             System.err.println("No se pudo guardar el calendario: " + ex.getMessage());
-        //         }
-        //     }
-        // });
     }
 
     private void setupLookAndFeel() {
@@ -175,13 +165,22 @@ public class CalendarioDashboard extends JFrame {
         panelDerechoSplit.setLayout(new BorderLayout(0, 10));
         panelDerechoSplit.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
+        // Panel vertical para tareas y puntos
+        JPanel panelTareasYPuntos = new JPanel();
+        panelTareasYPuntos.setLayout(new BoxLayout(panelTareasYPuntos, BoxLayout.Y_AXIS));
+        panelTareasYPuntos.add(createTareasPanel());
+        lblPuntosUsuario = new JLabel("Puntos: " + usuario.getPuntos());
+        lblPuntosUsuario.setAlignmentX(Component.CENTER_ALIGNMENT);
+        lblPuntosUsuario.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblPuntosUsuario.setBorder(BorderFactory.createEmptyBorder(8, 0, 8, 0));
+        panelTareasYPuntos.add(lblPuntosUsuario);
+
         // Add day info panel
         panelDerechoSplit.add(createDateInfoPanel(), BorderLayout.NORTH);
         // Add events panel
         panelDerechoSplit.add(createEventsPanel(), BorderLayout.CENTER);
-        // Add tasks panel
-        panelDerechoSplit.add(createTareasPanel(), BorderLayout.SOUTH);
-
+        // Add tasks and points panel
+        panelDerechoSplit.add(panelTareasYPuntos, BorderLayout.SOUTH);
         return panelDerechoSplit;
     }
 
@@ -869,6 +868,10 @@ public class CalendarioDashboard extends JFrame {
                         nueva.setFin(horaFin);
                     }
                 } catch (Exception ex) {}
+                // Establecer fechaLimite si hay fecha y hora de fin
+                if (nueva.getFecha() != null && nueva.getFin() != null) {
+                    nueva.setFechaLimite(java.time.LocalDateTime.of(nueva.getFecha(), nueva.getFin()));
+                }
                 return nueva;
             } else {
                 tarea.setTitulo(txtTitulo.getText().trim());
@@ -893,6 +896,10 @@ public class CalendarioDashboard extends JFrame {
                         tarea.setFin(horaFin);
                     }
                 } catch (Exception ex) {}
+                // Establecer fechaLimite si hay fecha y hora de fin
+                if (tarea.getFecha() != null && tarea.getFin() != null) {
+                    tarea.setFechaLimite(java.time.LocalDateTime.of(tarea.getFecha(), tarea.getFin()));
+                }
                 return tarea;
             }
         }
@@ -915,6 +922,17 @@ public class CalendarioDashboard extends JFrame {
                 int confirm = JOptionPane.showConfirmDialog(this, "¿Está seguro de marcar la tarea como realizada?", "Confirmar", JOptionPane.YES_NO_OPTION);
                 if (confirm == JOptionPane.YES_OPTION) {
                     tarea.setCompletada(true);
+                    // Otorgar puntos si se completa antes de la fecha límite
+                    if (tarea.getFechaLimite() != null && tarea.getFechaCompletada() != null && tarea.getFechaCompletada().isBefore(tarea.getFechaLimite())) {
+                        long minutosRestantes = ChronoUnit.MINUTES.between(tarea.getFechaCompletada(), tarea.getFechaLimite());
+                        int puntos = (int) Math.max(1, minutosRestantes / 10); // 1 punto mínimo, 1 punto por cada 10 minutos de anticipación
+                        usuario.sumarPuntos(puntos);
+                        tarea.setPuntosOtorgados(puntos);
+                        actualizarPuntosUsuario();
+                        JOptionPane.showMessageDialog(this, "+" + puntos + " puntos por completar antes de la fecha límite!", "¡Puntos ganados!", JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        tarea.setPuntosOtorgados(0);
+                    }
                     actualizarVistaTareas(eventoActual);
                     actualizarInterfaz();
                 }
@@ -926,6 +944,13 @@ public class CalendarioDashboard extends JFrame {
                 int confirm = JOptionPane.showConfirmDialog(this, "¿Desea desmarcar la tarea como realizada?", "Confirmar", JOptionPane.YES_NO_OPTION);
                 if (confirm == JOptionPane.YES_OPTION) {
                     tarea.setCompletada(false);
+                    // Quitar puntos si se desmarca
+                    if (tarea.getPuntosOtorgados() > 0) {
+                        usuario.setPuntos(Math.max(0, usuario.getPuntos() - tarea.getPuntosOtorgados()));
+                        JOptionPane.showMessageDialog(this, "-" + tarea.getPuntosOtorgados() + " puntos retirados.", "Puntos retirados", JOptionPane.WARNING_MESSAGE);
+                        tarea.setPuntosOtorgados(0);
+                        actualizarPuntosUsuario();
+                    }
                     actualizarVistaTareas(eventoActual);
                     actualizarInterfaz();
                 }
@@ -967,6 +992,11 @@ public class CalendarioDashboard extends JFrame {
                 }
             }
         });
+    }
+
+    private void actualizarPuntosUsuario() {
+        lblPuntosUsuario.setText("Puntos: " + usuario.getPuntos());
+        UsuarioManager.guardarUsuario(usuario);
     }
 }
 

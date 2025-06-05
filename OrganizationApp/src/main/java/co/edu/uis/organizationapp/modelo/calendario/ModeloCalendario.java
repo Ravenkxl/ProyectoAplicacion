@@ -34,6 +34,7 @@ public class ModeloCalendario {
     }
 
     public void addEvento(Evento e) {
+        if (e == null || !(e instanceof Evento)) return;
         eventos.computeIfAbsent(e.getFecha(), d -> new ArrayList<>()).add(e);
         guardarEnJson();
     }

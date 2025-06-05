@@ -22,6 +22,7 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonToken;
+import co.edu.uis.Notas.DataManager;
 
 public class Nota extends javax.swing.JFrame{
     private JTree navegacionTree;
@@ -40,6 +41,7 @@ public class Nota extends javax.swing.JFrame{
     private Map<String, MateriaData> materiasData;
     
     private final Gson gson;
+    private static final String DATA_FILE = "notas_data.json";
 
     private Gson createGson() {
         return new GsonBuilder()
@@ -210,6 +212,21 @@ public class Nota extends javax.swing.JFrame{
             }
         });
         carpetasPanel.add(addMateriaPanel);
+
+        // AGREGAR TODAS LAS MATERIAS GUARDADAS AL INICIAR
+        for (Map.Entry<String, MateriaData> entry : materiasData.entrySet()) {
+            String nombre = entry.getKey();
+            Color color = entry.getValue().color;
+            JPanel materiaPanel = createFolderPanel(nombre, color);
+            materiaPanel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    mostrarContenidoMateria(nombre);
+                }
+            });
+            // Insertar antes del botón '+ Nueva Materia'
+            carpetasPanel.add(materiaPanel, carpetasPanel.getComponentCount() - 1);
+        }
         
         JScrollPane scrollPane = new JScrollPane(carpetasPanel);
         mainContentPanel.add(scrollPane, "MATERIAS");
@@ -268,16 +285,21 @@ public class Nota extends javax.swing.JFrame{
             
         if (result == JOptionPane.OK_OPTION && !nombreField.getText().trim().isEmpty()) {
             String nombre = nombreField.getText().trim();
+            // Validar duplicados (ignorando mayúsculas/minúsculas y espacios)
+            boolean existe = materiasData.keySet().stream()
+                .anyMatch(existing -> existing.trim().equalsIgnoreCase(nombre));
+            if (existe) {
+                JOptionPane.showMessageDialog(this, "Ya existe una materia con ese nombre.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             JPanel materiaPanel = createFolderPanel(nombre, selectedColor);
             materiasData.put(nombre, new MateriaData(selectedColor));
-            
             materiaPanel.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     mostrarContenidoMateria(nombre);
                 }
             });
-            
             carpetasPanel.add(materiaPanel, carpetasPanel.getComponentCount() - 1);
             carpetasPanel.revalidate();
             carpetasPanel.repaint();
@@ -624,13 +646,12 @@ public class Nota extends javax.swing.JFrame{
     }
 
     private Map<String, MateriaData> cargarDatos() {
-        File file = new File("materias.json");
+        File file = new File(DATA_FILE);
         if (!file.exists()) {
             return new HashMap<>();
         }
-        
         try (Reader reader = new BufferedReader(new FileReader(file))) {
-            return gson.fromJson(reader, new TypeToken<HashMap<String, MateriaData>>(){}.getType());
+            return gson.fromJson(reader, new com.google.gson.reflect.TypeToken<HashMap<String, MateriaData>>(){}.getType());
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this,
@@ -641,7 +662,7 @@ public class Nota extends javax.swing.JFrame{
     }
 
     private void guardarDatos() {
-        try (Writer writer = new BufferedWriter(new FileWriter("materias.json"))) {
+        try (Writer writer = new BufferedWriter(new FileWriter(DATA_FILE))) {
             gson.toJson(materiasData, writer);
         } catch (IOException e) {
             e.printStackTrace();
