@@ -7,9 +7,15 @@ public class Subtarea {
     private String descripcion;
     private boolean completada;
     private LocalDateTime fechaCompletada;
-    private Tarea tareaPadre;
+    private transient Tarea tareaPadre;
 
     public Subtarea() {
+        this.completada = false;
+    }
+    
+    public Subtarea(String titulo) {
+        this.titulo = titulo;
+        this.completada = false;
     }
 
     public String getTitulo() {
@@ -32,13 +38,37 @@ public class Subtarea {
         return completada;
     }
 
+    public void setCompletada(boolean completada) {
+        boolean oldValue = this.completada;
+        this.completada = completada;
+        if (completada && !oldValue) {
+            marcarComoCompletada();
+        } else if (!completada && oldValue) {
+            desmarcarCompletada();
+        }
+        if (tareaPadre != null) {
+            tareaPadre.actualizarEstadoCompletado();
+        }
+    }
+
     public void marcarComoCompletada() {
         this.completada = true;
         this.fechaCompletada = LocalDateTime.now();
+        if (tareaPadre != null) {
+            tareaPadre.actualizarEstadoCompletado();
+        }
     }
 
-    public void setCompletada(boolean completada) {
-        this.completada = completada;
+    public void desmarcarCompletada() {
+        this.completada = false;
+        this.fechaCompletada = null;
+        if (tareaPadre != null) {
+            tareaPadre.desmarcarCompletada();
+        }
+    }
+
+    public LocalDateTime getFechaCompletada() {
+        return fechaCompletada;
     }
 
     public void setFechaCompletada(LocalDateTime fechaCompletada) {

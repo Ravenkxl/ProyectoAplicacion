@@ -1,6 +1,5 @@
 package co.edu.uis.organizationapp.vista.calendario;
 
-import co.edu.uis.organizationapp.modelo.calendario.Subtarea;
 import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDateTime;
@@ -8,8 +7,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.awt.font.TextAttribute;
+import java.util.Map;
 
 public class TareaRenderer extends JPanel implements ListCellRenderer<TareaCheckBox> {
     private final JCheckBox checkbox;
@@ -50,22 +49,24 @@ public class TareaRenderer extends JPanel implements ListCellRenderer<TareaCheck
             boolean cellHasFocus) {
             
         if (value.isSubtarea()) {
-            // Estilo para subtareas - Usar solo indentación
+            // Subtask style - use indentation
             setBorder(BorderFactory.createEmptyBorder(1, 35, 1, 1));
             label.setFont(new Font("Segoe UI", Font.ITALIC, 11));
             label.setText(value.getSubtarea().getTitulo());
             setBackground(new Color(250, 250, 250));
             checkbox.setBackground(getBackground());
             fechaLimite.setText("");
+            checkbox.setSelected(value.getSubtarea().isCompletada());
         } else {
-            // Estilo para tareas principales
+            // Main task style
             setBorder(BorderFactory.createEmptyBorder(1, 5, 1, 1));
             label.setFont(new Font("Segoe UI", Font.PLAIN, 12));
             label.setText(value.getTarea().getTitulo());
             setBackground(Color.WHITE);
             checkbox.setBackground(getBackground());
+            checkbox.setSelected(value.getTarea().isCompletada());
             
-            // Solo mostrar fecha límite para tareas principales
+            // Show deadline only for main tasks
             if (value.getTarea() != null && value.getTarea().getFechaLimite() != null) {
                 fechaLimite.setText(formatearFechaLimite(value.getTarea().getFechaLimite()));
             } else {
@@ -73,28 +74,30 @@ public class TareaRenderer extends JPanel implements ListCellRenderer<TareaCheck
             }
         }
         
-        // Estado del checkbox
-        checkbox.setSelected(value.isCompletada());
-        
-        // Modificar la lógica de estado vencido/completado
-        if (value.isCompletada()) {
+        // Handle completed state
+        if ((value.isSubtarea() && value.getSubtarea().isCompletada()) ||
+            (!value.isSubtarea() && value.getTarea().isCompletada())) {
             Map<TextAttribute, Object> attributes = new HashMap<>();
             attributes.put(TextAttribute.STRIKETHROUGH, TextAttribute.STRIKETHROUGH_ON);
             label.setFont(label.getFont().deriveFont(attributes));
             setBackground(COLOR_COMPLETADA);
+            checkbox.setBackground(COLOR_COMPLETADA);
             fechaLimite.setText("Completada");
+            fechaLimite.setForeground(Color.GREEN.darker());
         } else if (!value.isSubtarea() && value.getTarea() != null && value.getTarea().estaVencida()) {
             setBackground(COLOR_VENCIDA);
-            fechaLimite.setText("¡VENCIDA!");
+            checkbox.setBackground(COLOR_VENCIDA);
             fechaLimite.setFont(FONT_VENCIDA);
             fechaLimite.setForeground(Color.WHITE);
         } else {
-            setBackground(list.getBackground());
             fechaLimite.setFont(new Font("Segoe UI", Font.ITALIC, 11));
             fechaLimite.setForeground(Color.GRAY);
+            if (!value.isSubtarea()) {
+                setBackground(list.getBackground());
+            }
         }
         
-        // Resaltar selección
+        // Handle selection state
         if (isSelected) {
             setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(list.getSelectionBackground(), 1),
@@ -110,25 +113,16 @@ public class TareaRenderer extends JPanel implements ListCellRenderer<TareaCheck
         LocalDateTime ahora = LocalDateTime.now();
         long diasDiferencia = ChronoUnit.DAYS.between(ahora, fecha);
         
+        Locale spanish = Locale.forLanguageTag("es");
+        
         if (diasDiferencia == 0) {
             return "Hoy " + fecha.format(DateTimeFormatter.ofPattern("HH:mm"));
         } else if (diasDiferencia == 1) {
             return "Mañana " + fecha.format(DateTimeFormatter.ofPattern("HH:mm"));
         } else if (diasDiferencia > 1 && diasDiferencia < 7) {
-            return fecha.format(DateTimeFormatter.ofPattern("EEEE HH:mm", new Locale("es")));
+            return fecha.format(DateTimeFormatter.ofPattern("EEEE HH:mm", spanish));
         } else {
-            return fecha.format(DateTimeFormatter.ofPattern("d MMM HH:mm", new Locale("es")));
-        }
-    }
-
-    // Agregar método auxiliar para mostrar subtareas
-    private void mostrarSubtareas(TareaCheckBox value, DefaultListModel<TareaCheckBox> model, int index) {
-        if (value.getTarea().getSubtareas() != null) {
-            for (Subtarea subtarea : value.getTarea().getSubtareas()) {
-                TareaCheckBox subtareaCheckBox = new TareaCheckBox(null);
-                subtareaCheckBox.setSubtarea(subtarea);
-                model.add(index + 1, subtareaCheckBox);
-            }
+            return fecha.format(DateTimeFormatter.ofPattern("d MMM HH:mm", spanish));
         }
     }
 }

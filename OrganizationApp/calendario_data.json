@@ -1,0 +1,44 @@
+{
+  "eventos": {
+    "2025-06-05": [
+      {
+        "fecha": "2025-06-05",
+        "inicio": "01:47:29.088",
+        "fin": "02:47:29.088",
+        "titulo": "ASDFAS",
+        "descripcion": "ADSA",
+        "tareas": [
+          {
+            "titulo": "ASDSA",
+            "fecha": "2025-06-05",
+            "inicio": "01:47",
+            "fin": "01:47",
+            "descripcion": "ASDAS",
+            "subtareas": [
+              {
+                "titulo": "ASDSA",
+                "completada": false
+              }
+            ],
+            "completada": false
+          },
+          {
+            "titulo": "ASDAS",
+            "fecha": "2025-06-05",
+            "inicio": "01:58",
+            "fin": "01:58",
+            "descripcion": "ASDAS",
+            "subtareas": [
+              {
+                "titulo": "ASDAS",
+                "completada": false
+              }
+            ],
+            "completada": false
+          }
+        ]
+      }
+    ]
+  },
+  "tareas": {}
+}

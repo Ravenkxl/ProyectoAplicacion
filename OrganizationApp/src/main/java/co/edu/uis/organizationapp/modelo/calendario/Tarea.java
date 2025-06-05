@@ -12,19 +12,16 @@ public class Tarea {
     private LocalTime inicio, fin;
     private String descripcion;
     private List<Subtarea> subtareas = new ArrayList<>();
-    private boolean IsTareaCompleted;
     private LocalDateTime fechaLimite;
     private boolean completada;
     private LocalDateTime fechaCompletada;
 
-    public boolean isIsTareaCompleted() {
-        return IsTareaCompleted;
+    public Tarea(String titulo) {
+        this.titulo = titulo;
+        this.subtareas = new ArrayList<>();
+        this.completada = false;
     }
 
-    public void setIsTareaCompleted(boolean IsTareaCompleted) {
-        this.IsTareaCompleted = IsTareaCompleted;
-    }
-    
     public String getDescripcion() {
         return descripcion;
     }
@@ -87,20 +84,37 @@ public class Tarea {
 
     public void setCompletada(boolean completada) {
         this.completada = completada;
+        if (completada) {
+            marcarComoCompletada();
+        } else {
+            desmarcarCompletada();
+        }
     }
 
-    public void setFechaCompletada(LocalDateTime fechaCompletada) {
-        this.fechaCompletada = fechaCompletada;
+    public LocalDateTime getFechaCompletada() {
+        return fechaCompletada;
     }
 
     public void marcarComoCompletada() {
         this.completada = true;
         this.fechaCompletada = LocalDateTime.now();
+        // When a task is completed, mark all subtasks as completed
+        if (subtareas != null) {
+            for (Subtarea subtarea : subtareas) {
+                subtarea.setCompletada(true);
+            }
+        }
     }
 
     public void desmarcarCompletada() {
         this.completada = false;
         this.fechaCompletada = null;
+        // When a task is uncompleted, unmark all subtasks
+        if (subtareas != null) {
+            for (Subtarea subtarea : subtareas) {
+                subtarea.setCompletada(false);
+            }
+        }
     }
 
     public boolean estaVencida() {
@@ -113,9 +127,29 @@ public class Tarea {
             subtareas = new ArrayList<>();
         }
         subtareas.add(subtarea);
+        subtarea.setTareaPadre(this);
     }
     
     public void eliminarSubtarea(Subtarea subtarea) {
-        subtareas.remove(subtarea);
+        if (subtareas != null && subtarea != null) {
+            subtareas.remove(subtarea);
+            subtarea.setTareaPadre(null);
+        }
+    }
+
+    public void actualizarEstadoCompletado() {
+        // Update task completion status based on subtasks
+        if (subtareas != null && !subtareas.isEmpty()) {
+            boolean todasCompletadas = true;
+            for (Subtarea subtarea : subtareas) {
+                if (!subtarea.isCompletada()) {
+                    todasCompletadas = false;
+                    break;
+                }
+            }
+            if (todasCompletadas != completada) {
+                setCompletada(todasCompletadas);
+            }
+        }
     }
 }
