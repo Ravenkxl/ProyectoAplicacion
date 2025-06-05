@@ -18,6 +18,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 import javax.swing.text.StyledEditorKit;
+import javax.swing.text.Element;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 import com.google.gson.TypeAdapter;
@@ -70,10 +71,17 @@ public class Nota extends javax.swing.JFrame {
                         return Color.WHITE;
                     }
                     reader.beginObject();
-                    reader.nextName(); // "rgb"
-                    Color color = new Color(reader.nextInt(), true);
+                    int rgb = 0;
+                    while (reader.hasNext()) {
+                        String name = reader.nextName();
+                        if ("rgb".equals(name)) {
+                            rgb = reader.nextInt();
+                        } else {
+                            reader.skipValue();
+                        }
+                    }
                     reader.endObject();
-                    return color;
+                    return new Color(rgb, true);
                 }
             })
             .setPrettyPrinting()
@@ -188,6 +196,25 @@ public class Nota extends javax.swing.JFrame {
             }
         });
     }
+
+    // Implementación de cargarDatos para inicializar materiasData desde el archivo JSON
+    private Map<String, MateriaData> cargarDatos() {
+        File file = new File(DATA_FILE);
+        if (!file.exists()) {
+            return new HashMap<>();
+        }
+        try (Reader reader = new FileReader(file)) {
+            java.lang.reflect.Type type = new TypeToken<Map<String, MateriaData>>(){}.getType();
+            Map<String, MateriaData> data = gson.fromJson(reader, type);
+            if (data == null) {
+                return new HashMap<>();
+            }
+            return data;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new HashMap<>();
+        }
+    }
     
     private void initComponents() {
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -269,53 +296,202 @@ public class Nota extends javax.swing.JFrame {
         
         panel.add(iconLabel, BorderLayout.CENTER);
         panel.add(nameLabel, BorderLayout.SOUTH);
+
+        if (!nombre.equals("+ Nueva Materia") && !nombre.equals("+ Nuevo Tema")) {
+            JButton deleteBtn = new JButton("X");
+            deleteBtn.setFont(new Font("Arial", Font.BOLD, 10));
+            deleteBtn.setMargin(new Insets(1, 4, 1, 4));
+            deleteBtn.addActionListener(e -> {
+                // Create modal dialog properly parented
+                Window parentWindow = SwingUtilities.getWindowAncestor(mainContentPanel);
+                JDialog confirmDialog;
+                if (parentWindow instanceof Frame) {
+                    confirmDialog = new JDialog((Frame) parentWindow, "Confirmar eliminación", true);
+                } else if (parentWindow instanceof Dialog) {
+                    confirmDialog = new JDialog((Dialog) parentWindow, "Confirmar eliminación", true);
+                } else {
+                    confirmDialog = new JDialog((Frame) null, "Confirmar eliminación", true);
+                }
+                confirmDialog.setLayout(new BorderLayout(10, 10));
+                confirmDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+                confirmDialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+                
+                JPanel dialogPanel = new JPanel(new BorderLayout(10, 10));
+                dialogPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+                dialogPanel.setBackground(Color.WHITE);
+                
+                JLabel msgLabel = new JLabel("¿Está seguro de eliminar esta materia?");
+                dialogPanel.add(msgLabel, BorderLayout.CENTER);
+                
+                JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+                buttonPanel.setBackground(Color.WHITE);
+                
+                JButton yesButton = new JButton("Sí");
+                JButton noButton = new JButton("No");
+                
+                yesButton.addActionListener(ev -> {
+                    materiasData.remove(nombre);
+                    guardarDatos();
+                    carpetasPanel.removeAll();
+                    
+                    // Add all existing materias
+                    for (Map.Entry<String, MateriaData> entry : materiasData.entrySet()) {
+                        JPanel materiaPanel = createFolderPanel(entry.getKey(), entry.getValue().color);
+                        final String materiaName = entry.getKey();
+                        materiaPanel.addMouseListener(new MouseAdapter() {
+                            @Override
+                            public void mouseClicked(MouseEvent evt) {
+                                mostrarContenidoMateria(materiaName);
+                            }
+                        });
+                        carpetasPanel.add(materiaPanel);
+                    }
+                    
+                    // Add the "Nueva Materia" button
+                    JPanel addMateriaPanel = createFolderPanel("+ Nueva Materia", null);
+                    addMateriaPanel.addMouseListener(new MouseAdapter() {
+                        @Override
+                        public void mouseClicked(MouseEvent evt) {
+                            crearNuevaMateria();
+                        }
+                    });
+                    carpetasPanel.add(addMateriaPanel);
+                    
+                    carpetasPanel.revalidate();
+                    carpetasPanel.repaint();
+                    confirmDialog.dispose();
+                });
+                
+                noButton.addActionListener(ev -> confirmDialog.dispose());
+                
+                buttonPanel.add(yesButton);
+                buttonPanel.add(noButton);
+                dialogPanel.add(buttonPanel, BorderLayout.SOUTH);
+                
+                confirmDialog.add(dialogPanel);
+                confirmDialog.pack();
+                confirmDialog.setLocationRelativeTo(SwingUtilities.getWindowAncestor(mainContentPanel));
+                confirmDialog.setAlwaysOnTop(true);
+                confirmDialog.setVisible(true);
+            });
+            
+            JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+            topPanel.setOpaque(false);
+            topPanel.add(deleteBtn);
+            panel.add(topPanel, BorderLayout.NORTH);
+        }
+
         return panel;
     }
 
     private void crearNuevaMateria() {
-        JTextField nombreField = new JTextField();
+        // Create modal dialog with proper parent window reference
+        Window owner = SwingUtilities.getWindowAncestor(mainContentPanel);
+        if (owner == null) owner = this;
+        
+        JDialog dialog;
+        if (owner instanceof Frame) {
+            dialog = new JDialog((Frame) owner, "Nueva Materia", true);
+        } else if (owner instanceof Dialog) {
+            dialog = new JDialog((Dialog) owner, "Nueva Materia", true);
+        } else {
+            dialog = new JDialog((Frame) null, "Nueva Materia", true);
+        }
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.setLayout(new BorderLayout(10, 10));
+        dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+        
+        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        mainPanel.setBackground(Color.WHITE);
+        
+        // Input panel
+        JPanel inputPanel = new JPanel(new GridLayout(2, 2, 5, 5));
+        inputPanel.setBackground(Color.WHITE);
+        
+        JTextField nombreField = new JTextField(15);
         JButton colorButton = new JButton("Seleccionar Color");
         selectedColor = Color.WHITE;
+        colorButton.setBackground(selectedColor);
         
         colorButton.addActionListener(e -> {
-            Color newColor = JColorChooser.showDialog(this, "Seleccionar Color", selectedColor);
-            if (newColor != null) {
-                selectedColor = newColor;
-                colorButton.setBackground(selectedColor);
-            }
+            Window parentWindow = SwingUtilities.getWindowAncestor(dialog);
+            JColorChooser colorChooser = new JColorChooser(selectedColor);
+            JDialog colorDialog = JColorChooser.createDialog(
+                parentWindow,
+                "Seleccionar Color",
+                true,
+                colorChooser,
+                e2 -> {
+                    selectedColor = colorChooser.getColor();
+                    if (selectedColor != null) {
+                        colorButton.setBackground(selectedColor);
+                    }
+                },
+                null
+            );
+            colorDialog.setLocationRelativeTo(dialog);
+            colorDialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+            colorDialog.setVisible(true);
         });
         
-        JPanel panel = new JPanel(new GridLayout(2, 2, 5, 5));
-        panel.add(new JLabel("Nombre:"));
-        panel.add(nombreField);
-        panel.add(new JLabel("Color:"));
-        panel.add(colorButton);
+        inputPanel.add(new JLabel("Nombre:"));
+        inputPanel.add(nombreField);
+        inputPanel.add(new JLabel("Color:"));
+        inputPanel.add(colorButton);
+        mainPanel.add(inputPanel, BorderLayout.CENTER);
         
-        int result = JOptionPane.showConfirmDialog(this, panel, "Nueva Materia", 
-            JOptionPane.OK_CANCEL_OPTION);
-            
-        if (result == JOptionPane.OK_OPTION && !nombreField.getText().trim().isEmpty()) {
+        // Button panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        buttonPanel.setBackground(Color.WHITE);
+        JButton okButton = new JButton("Aceptar");
+        JButton cancelButton = new JButton("Cancelar");
+        
+        okButton.addActionListener(e -> {
             String nombre = nombreField.getText().trim();
-            // Validar duplicados (ignorando mayúsculas/minúsculas y espacios)
-            boolean existe = materiasData.keySet().stream()
-                .anyMatch(existing -> existing.trim().equalsIgnoreCase(nombre));
-            if (existe) {
-                JOptionPane.showMessageDialog(this, "Ya existe una materia con ese nombre.", "Error", JOptionPane.ERROR_MESSAGE);
+            if (nombre.isEmpty()) return;
+            
+            if (materiasData.containsKey(nombre)) {
+                JOptionPane.showMessageDialog(dialog,
+                    "Ya existe una materia con ese nombre",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            JPanel materiaPanel = createFolderPanel(nombre, selectedColor);
-            materiasData.put(nombre, new MateriaData(selectedColor));
-            materiaPanel.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    mostrarContenidoMateria(nombre);
-                }
+            
+            // Update UI in the EventDispatch thread
+            SwingUtilities.invokeLater(() -> {
+                JPanel materiaPanel = createFolderPanel(nombre, selectedColor);
+                materiasData.put(nombre, new MateriaData(selectedColor));
+                materiaPanel.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        mostrarContenidoMateria(nombre);
+                    }
+                });
+                carpetasPanel.add(materiaPanel, carpetasPanel.getComponentCount() - 1);
+                carpetasPanel.revalidate();
+                carpetasPanel.repaint();
+                guardarDatos();
             });
-            carpetasPanel.add(materiaPanel, carpetasPanel.getComponentCount() - 1);
-            carpetasPanel.revalidate();
-            carpetasPanel.repaint();
-            guardarDatos(); // Guardar después de crear materia
-        }
+            
+            dialog.dispose();
+        });
+        
+        cancelButton.addActionListener(e -> dialog.dispose());
+        
+        buttonPanel.add(okButton);
+        buttonPanel.add(cancelButton);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+        
+        dialog.add(mainPanel);
+        dialog.getRootPane().setDefaultButton(okButton);
+        dialog.pack();
+        dialog.setLocationRelativeTo(owner);
+        dialog.toFront();
+        dialog.setAlwaysOnTop(true);
+        dialog.setVisible(true);
+        dialog.setAlwaysOnTop(false);
     }
 
     private JPanel createApuntesPanel() {
@@ -360,9 +536,10 @@ public class Nota extends javax.swing.JFrame {
 
         colorBtn.addActionListener(e -> {
             JColorChooser colorChooser = new JColorChooser(Color.BLACK);
-            final JDialog dialog = JColorChooser.createDialog(null,
+            final JDialog dialog = JColorChooser.createDialog(
+                SwingUtilities.getWindowAncestor(this),  // Parent to main frame
                 "Seleccionar Color",
-                false, // non-modal
+                true,  // Make it modal
                 colorChooser,
                 event -> {
                     Color selected = colorChooser.getColor();
@@ -377,8 +554,9 @@ public class Nota extends javax.swing.JFrame {
                         }
                     }
                 },
-                null);
-            dialog.setLocationRelativeTo(apuntesPanel);
+                null
+            );
+            dialog.setLocationRelativeTo(this);
             dialog.setVisible(true);
         });
 
@@ -398,6 +576,17 @@ public class Nota extends javax.swing.JFrame {
         edicionToolbar.add(colorBtn);
         edicionToolbar.add(new JLabel("Tamaño: "));
         edicionToolbar.add(sizeCombo);
+        
+        // Add file link button to toolbar
+        JButton linkBtn = new JButton("Agregar Archivo");
+        linkBtn.addActionListener(e -> {
+            JFileChooser fc = new JFileChooser();
+            if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                File file = fc.getSelectedFile();
+                insertFileLink(file.getAbsolutePath(), file.getName());
+            }
+        });
+        edicionToolbar.add(linkBtn);
         
         // Agregar botón volver en un panel separado
         JPanel volverPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -427,6 +616,19 @@ public class Nota extends javax.swing.JFrame {
         return panel;
     }
     
+    private void insertFileLink(String path, String displayName) {
+        try {
+            StyledDocument doc = contenidoPane.getStyledDocument();
+            javax.swing.text.Style style = contenidoPane.addStyle("FileLink", null);
+            StyleConstants.setForeground(style, Color.BLUE);
+            StyleConstants.setUnderline(style, true);
+            style.addAttribute("filePath", path);
+            doc.insertString(contenidoPane.getCaretPosition(), displayName + "\n", style);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
     private JPanel createNotasPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         
@@ -593,21 +795,48 @@ public class Nota extends javax.swing.JFrame {
 
     // Método para crear un nuevo tema en una materia
     private void crearNuevoTema(String materia) {
-        String nombreTema = JOptionPane.showInputDialog(this, "Nombre del nuevo tema:", "Nuevo Tema", JOptionPane.PLAIN_MESSAGE);
-        if (nombreTema != null && !nombreTema.trim().isEmpty()) {
-            MateriaData data = materiasData.get(materia);
-            if (data != null) {
-                // Validar duplicados
-                boolean existe = data.getTemas().stream().anyMatch(existing -> existing.trim().equalsIgnoreCase(nombreTema));
-                if (existe) {
-                    JOptionPane.showMessageDialog(this, "Ya existe un tema con ese nombre.", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
+        JDialog dialog = new JDialog(this, "Nuevo Tema", true);
+        JTextField nombreField = new JTextField(20);
+        JPanel panel = new JPanel(new BorderLayout(5, 5));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        panel.add(new JLabel("Nombre del nuevo tema:"), BorderLayout.NORTH);
+        panel.add(nombreField, BorderLayout.CENTER);
+        
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton okButton = new JButton("Aceptar");
+        JButton cancelButton = new JButton("Cancelar");
+        
+        okButton.addActionListener(e -> {
+            String nombre = nombreField.getText().trim();
+            if (!nombre.isEmpty()) {
+                MateriaData data = materiasData.get(materia);
+                if (data != null) {
+                    if (data.getTemas().stream().anyMatch(t -> t.equalsIgnoreCase(nombre))) {
+                        JOptionPane.showMessageDialog(dialog, 
+                            "Ya existe un tema con ese nombre.", 
+                            "Error", 
+                            JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    data.addTema(nombre);
+                    guardarDatos();
+                    mostrarContenidoMateria(materia);
+                    dialog.dispose();
                 }
-                data.addTema(nombreTema);
-                guardarDatos();
-                mostrarContenidoMateria(materia); // Refrescar la vista de la materia
             }
-        }
+        });
+        
+        cancelButton.addActionListener(e -> dialog.dispose());
+        
+        buttonPanel.add(okButton);
+        buttonPanel.add(cancelButton);
+        panel.add(buttonPanel, BorderLayout.SOUTH);
+        
+        dialog.add(panel);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
     }
 
     // Implement guardarDatos method
@@ -621,157 +850,116 @@ public class Nota extends javax.swing.JFrame {
 
     // Método para agregar una nueva nota a la materia (método de la clase externa Nota)
     private void agregarNota(String materia, JTable table, DefaultTableModel model) {
-        JTextField tituloField = new JTextField();
-        JTextField notaField = new JTextField();
-        JTextField porcentajeField = new JTextField();
+        // Create modal dialog
+        JDialog dialog = new JDialog(this, "Agregar Nota", true);
+        dialog.setLayout(new BorderLayout(10, 10));
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
-        JPanel panel = new JPanel(new GridLayout(3, 2, 5, 5));
-        panel.add(new JLabel("Título:"));
-        panel.add(tituloField);
-        panel.add(new JLabel("Nota:"));
-        panel.add(notaField);
-        panel.add(new JLabel("Porcentaje:"));
-        panel.add(porcentajeField);
+        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        mainPanel.setBackground(Color.WHITE);
 
-        int result = JOptionPane.showConfirmDialog(null, panel, "Agregar Nota", JOptionPane.OK_CANCEL_OPTION);
-        if (result == JOptionPane.OK_OPTION) {
+        // Input panel
+        JPanel inputPanel = new JPanel(new GridLayout(3, 2, 5, 5));
+        inputPanel.setBackground(Color.WHITE);
+        
+        JTextField tituloField = new JTextField(15);
+        JTextField notaField = new JTextField(15);
+        JTextField porcentajeField = new JTextField(15);
+
+        inputPanel.add(new JLabel("Título:"));
+        inputPanel.add(tituloField);
+        inputPanel.add(new JLabel("Nota:"));
+        inputPanel.add(notaField);
+        inputPanel.add(new JLabel("Porcentaje:"));
+        inputPanel.add(porcentajeField);
+        
+        mainPanel.add(inputPanel, BorderLayout.CENTER);
+
+        // Button panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        buttonPanel.setBackground(Color.WHITE);
+        JButton okButton = new JButton("Aceptar");
+        JButton cancelButton = new JButton("Cancelar");
+
+        okButton.addActionListener(e -> {
             String titulo = tituloField.getText().trim();
-            double nota, porcentaje;
             try {
-                nota = Double.parseDouble(notaField.getText().trim());
-                porcentaje = Double.parseDouble(porcentajeField.getText().trim());
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(null, "Ingrese valores numéricos válidos para nota y porcentaje.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            MateriaData data = materiasData.get(materia);
-            if (data != null) {
-                data.addNota(titulo, nota, porcentaje);
-                NotaData nuevaNota = data.getNotas().get(data.getNotas().size() - 1);
-                model.addRow(nuevaNota.toTableRow());
-                guardarDatos();
-                // Actualizar la etiqueta de nota final si existe
-                Container parent = table.getParent();
-                while (parent != null && !(parent instanceof JPanel)) {
-                    parent = parent.getParent();
+                double nota = Double.parseDouble(notaField.getText().trim());
+                double porcentaje = Double.parseDouble(porcentajeField.getText().trim());
+
+                MateriaData data = materiasData.get(materia);
+                if (data != null) {
+                    data.addNota(titulo, nota, porcentaje);
+                    
+                    // Update UI in the EventDispatch thread
+                    SwingUtilities.invokeLater(() -> {
+                        NotaData nuevaNota = data.getNotas().get(data.getNotas().size() - 1);
+                        model.addRow(nuevaNota.toTableRow());
+                        updateNotaFinalLabel(table, data);
+                        guardarDatos();
+                    });
+                    
+                    dialog.dispose();
                 }
-                if (parent instanceof JPanel) {
-                    JPanel panelParent = (JPanel) parent;
-                    for (Component comp : panelParent.getComponents()) {
-                        if (comp instanceof JPanel) {
-                            for (Component subComp : ((JPanel) comp).getComponents()) {
-                                if (subComp instanceof JLabel) {
-                                    JLabel label = (JLabel) subComp;
-                                    if (label.getText().startsWith("Nota Final:")) {
-                                        label.setText(String.format("Nota Final: %.2f", data.getNotaTotal()));
-                                    }
-                                }
-                            }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dialog,
+                    "Ingrese valores numéricos válidos para nota y porcentaje.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        cancelButton.addActionListener(e -> dialog.dispose());
+
+        buttonPanel.add(okButton);
+        buttonPanel.add(cancelButton);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        dialog.add(mainPanel);
+        dialog.getRootPane().setDefaultButton(okButton);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
+    }
+
+    // Método para mostrar el contenido de un tema específico de una materia
+    private void mostrarContenidoTema(String materia, String tema) {
+        // Set current materia for navigation
+        this.currentMateria = materia;
+
+        // Obtener el contenido del tema
+        MateriaData data = materiasData.get(materia);
+        String contenido = "";
+        if (data != null) {
+            contenido = data.getContenidoTema(tema);
+        }
+
+        // Mostrar el contenido en el JTextPane
+        contenidoPane.setText(contenido != null ? contenido : "");
+
+        // Cambiar a la vista de apuntes
+        ((CardLayout) mainContentPanel.getLayout()).show(mainContentPanel, "APUNTES");
+    }
+
+    // Helper method to update nota final label
+    private void updateNotaFinalLabel(JTable table, MateriaData data) {
+        Container parent = table.getParent();
+        while (parent != null && !(parent instanceof JPanel)) {
+            parent = parent.getParent();
+        }
+        if (parent instanceof JPanel) {
+            JPanel panelParent = (JPanel) parent;
+            for (Component comp : panelParent.getComponents()) {
+                if (comp instanceof JPanel) {
+                    for (Component subComp : ((JPanel) comp).getComponents()) {
+                        if (subComp instanceof JLabel) {
+                            
                         }
                     }
                 }
             }
         }
     }
-
-    // Método para mostrar el contenido de un tema específico de una materia
-    private void mostrarContenidoTema(String materia, String tema) {
-        MateriaData data = materiasData.get(materia);
-        if (data != null) {
-            currentMateria = materia;
-            
-            // Reinitialize the text pane
-            contenidoPane = new JTextPane();
-            contenidoPane.setEditable(true);
-            contenidoPane.putClientProperty("caretWidth", 2);
-            contenidoPane.setFont(new Font("Dialog", Font.PLAIN, 12));
-            
-            // Set content
-            contenidoPane.setText(data.getContenidoTema(tema));
-            
-            // Add document listener for auto-save
-            contenidoPane.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-                public void changedUpdate(javax.swing.event.DocumentEvent e) { guardarCambios(); }
-                public void insertUpdate(javax.swing.event.DocumentEvent e) { guardarCambios(); }
-                public void removeUpdate(javax.swing.event.DocumentEvent e) { guardarCambios(); }
-                
-                private void guardarCambios() {
-                    SwingUtilities.invokeLater(() -> {
-                        data.setContenidoTema(tema, contenidoPane.getText(), "");
-                        guardarDatos();
-                    });
-                }
-            });
-
-            // Update the apuntes panel with new text pane
-            apuntesPanel.removeAll();
-            JPanel topPanel = new JPanel(new BorderLayout());
-            topPanel.add(edicionToolbar, BorderLayout.CENTER);
-            JPanel volverPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-            JButton volverBtn = new JButton("Volver");
-            volverBtn.addActionListener(e -> {
-                guardarDatos();
-                ((CardLayout)mainContentPanel.getLayout()).show(mainContentPanel, "MATERIA_" + currentMateria);
-            });
-            volverPanel.add(volverBtn);
-            topPanel.add(volverPanel, BorderLayout.EAST);
-            
-            apuntesPanel.add(topPanel, BorderLayout.NORTH);
-            apuntesPanel.add(new JScrollPane(contenidoPane), BorderLayout.CENTER);
-            apuntesPanel.revalidate();
-            apuntesPanel.repaint();
-
-            ((CardLayout)mainContentPanel.getLayout()).show(mainContentPanel, "APUNTES");
-            contenidoPane.requestFocusInWindow();
-        }
-    }
-
-    // Serializes AttributeSet to a Base64 string (simple implementation)
-    private String serializeAttributes(AttributeSet attrs) {
-        try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ObjectOutputStream oos = new ObjectOutputStream(bos);
-            oos.writeObject(attrs);
-            oos.close();
-            return Base64.getEncoder().encodeToString(bos.toByteArray());
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "";
-        }
-    }
-
-    // Deserializes and applies AttributeSet to the StyledDocument
-    private void applyAttributes(byte[] data, StyledDocument doc) {
-        try {
-            ByteArrayInputStream bis = new ByteArrayInputStream(data);
-            ObjectInputStream ois = new ObjectInputStream(bis);
-            AttributeSet attrs = (AttributeSet) ois.readObject();
-            ois.close();
-            if (attrs != null) {
-                doc.setCharacterAttributes(0, doc.getLength(), attrs, true);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Implement cargarDatos method
-    private Map<String, MateriaData> cargarDatos() {
-        File file = new File(DATA_FILE);
-        if (!file.exists()) {
-            return new HashMap<>();
-        }
-        try (Reader reader = new FileReader(file)) {
-            java.lang.reflect.Type type = new com.google.gson.reflect.TypeToken<Map<String, MateriaData>>(){}.getType();
-            Map<String, MateriaData> data = gson.fromJson(reader, type);
-            if (data == null) {
-                return new HashMap<>();
-            }
-            return data;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new HashMap<>();
-        }
-    }
 }
-
+                         
