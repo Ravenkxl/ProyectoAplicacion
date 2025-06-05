@@ -11,7 +11,6 @@ import javax.swing.*;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 import com.formdev.flatlaf.FlatLightLaf;
-import co.edu.uis.organizationapp.vista.calendario.CalendarioFormateador;
 
 public class CalendarioDashboard extends JFrame {
     private ModeloCalendario modelo;
