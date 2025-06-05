@@ -17,7 +17,7 @@ public class Cronometro extends javax.swing.JFrame {
      */
     public Cronometro() {
         initComponents();
-        t=new Timer(10,acc);
+        t=new Timer(10,acc);    
     }
 
     /**
