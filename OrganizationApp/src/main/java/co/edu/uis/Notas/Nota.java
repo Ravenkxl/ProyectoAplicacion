@@ -36,13 +36,13 @@ public class Nota extends javax.swing.JFrame {
             HTMLEditorKit kit = new HTMLEditorKit();
             StringWriter writer = new StringWriter();
             
-            // Save file links as custom HTML attributes
+           
             for (int i = 0; i < doc.getLength(); i++) {
                 Element element = doc.getCharacterElement(i);
                 AttributeSet as = element.getAttributes();
                 Object filePath = as.getAttribute("filePath");
                 if (filePath != null) {
-                    // Add custom attribute to preserve file path
+                    
                     writer.write("<span data-filepath=\"" + filePath.toString() + "\">");
                 }
             }
@@ -308,12 +308,12 @@ public class Nota extends javax.swing.JFrame {
         panel.add(iconLabel, BorderLayout.CENTER);
         panel.add(nameLabel, BorderLayout.SOUTH);
 
-        // Detectar si es un panel de tema o materia
+     
         boolean esMateria = !nombre.equals("+ Nueva Materia") && !nombre.equals("+ Nuevo Tema") && !materiasData.values().stream().anyMatch(m -> m.getTemas().contains(nombre));
         boolean esTema = materiasData.values().stream().anyMatch(m -> m.getTemas().contains(nombre));
 
         if (esMateria) {
-            // Botón X para eliminar materia
+          
             JButton deleteBtn = new JButton("X");
             deleteBtn.setFont(new Font("Arial", Font.BOLD, 10));
             deleteBtn.setMargin(new Insets(1, 4, 1, 4));
@@ -392,7 +392,7 @@ JPanel addMateriaPanel = createFolderPanel("+ Nueva Materia", null);
             deleteBtn.setFont(new Font("Arial", Font.BOLD, 10));
             deleteBtn.setMargin(new Insets(1, 4, 1, 4));
             deleteBtn.addActionListener(e -> {
-                // Buscar la materia a la que pertenece este tema
+                
                 String materiaPadre = null;
                 for (Map.Entry<String, MateriaData> entry : materiasData.entrySet()) {
                     if (entry.getValue().getTemas().contains(nombre)) {
@@ -688,11 +688,9 @@ JPanel addMateriaPanel = createFolderPanel("+ Nueva Materia", null);
     private void insertFileLink(String path, String displayName) {
         try {
             StyledDocument doc = contenidoPane.getStyledDocument();
-            
-            // Insert the path as plain text
+
             doc.insertString(contenidoPane.getCaretPosition(), path + "\n", null);
-            
-            // Save content and file path attribute
+
             String contenidoTexto = contenidoPane.getText();
             materiasData.get(currentMateria).setContenidoTema(currentTema, contenidoTexto, path);
             guardarDatos();
@@ -749,7 +747,7 @@ JPanel addMateriaPanel = createFolderPanel("+ Nueva Materia", null);
             addTemaPanel.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    Nota.this.crearNuevoTema(materia); // Fixed: Use explicit reference to outer class
+                    Nota.this.crearNuevoTema(materia); 
                 }
             });
             carpetasTemasPanel.add(addTemaPanel);
@@ -819,7 +817,7 @@ JPanel addMateriaPanel = createFolderPanel("+ Nueva Materia", null);
         ((DefaultTableModel)otherTable.getModel()).removeRow(selectedRow);
     }
     guardarDatos();
-    // Refrescar la vista de la materia después de eliminar la nota
+  
     SwingUtilities.invokeLater(() -> mostrarContenidoMateria(materia));
 }
                 }
@@ -883,7 +881,7 @@ JPanel addMateriaPanel = createFolderPanel("+ Nueva Materia", null);
                     data.addTema(nombre);
                     guardarDatos();
                     dialog.dispose();
-                    // Refrescar la vista de la materia después de cerrar el diálogo
+                 
                     SwingUtilities.invokeLater(() -> mostrarContenidoMateria(materia));
                 }
             }
@@ -990,19 +988,19 @@ JPanel addMateriaPanel = createFolderPanel("+ Nueva Materia", null);
         this.currentMateria = materia;
         this.currentTema = tema;
 
-        // Load content first
+
         MateriaData data = materiasData.get(materia);
         if (data != null) {
             String contenido = data.getContenidoTema(tema);
             contenidoPane.setText(contenido != null ? contenido : "");
         }
 
-        // Add mouse listener for file paths
+
         contenidoPane.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 try {
-                    // Get selected line
+
                     int offset = contenidoPane.viewToModel2D(e.getPoint());
                     int line = contenidoPane.getDocument().getDefaultRootElement()
                             .getElementIndex(offset);
@@ -1012,13 +1010,13 @@ JPanel addMateriaPanel = createFolderPanel("+ Nueva Materia", null);
                             .getElement(line).getEndOffset();
                     String text = contenidoPane.getText(start, end - start).trim();
 
-                    // Try to open file if path exists
+ 
                     File file = new File(text);
                     if (file.exists()) {
                         Desktop.getDesktop().open(file);
                     }
                 } catch (Exception ex) {
-                    // Ignore if not a valid file path
+                 
                 }
             }
         });
