@@ -26,6 +26,9 @@ import com.google.gson.stream.JsonToken;
 import co.edu.uis.Notas.DataManager;
 import javax.swing.text.AttributeSet;
 import java.util.Base64;
+import javax.swing.text.html.HTMLEditorKit;
+import java.io.StringWriter;
+
 
 public class Nota extends javax.swing.JFrame {
     // Add these fields at the class level
@@ -45,9 +48,22 @@ public class Nota extends javax.swing.JFrame {
     private Color selectedColor;
     // Modificar las estructuras de datos
     private Map<String, MateriaData> materiasData;
+    private String currentTema;
     private String currentMateria; // Add this field to track the current materia
     
     private final Gson gson;
+    private String getDocumentHTML() {
+         try {
+             HTMLEditorKit kit = new HTMLEditorKit();
+             StringWriter writer = new StringWriter();
+             // Escribe todo el documento (desde offset 0 hasta length) en writer:
+             kit.write(writer, contenidoPane.getDocument(), 0, contenidoPane.getDocument().getLength());
+             return writer.toString();
+         } catch (Exception ex) {
+             ex.printStackTrace();
+             return "";
+         }
+     }
     private static final String DATA_FILE = "notas_data.json";
 
     private Gson createGson() {
@@ -519,6 +535,12 @@ public class Nota extends javax.swing.JFrame {
                 boolean isBold = StyleConstants.isBold(contenidoPane.getCharacterAttributes());
                 StyleConstants.setBold(style, !isBold);
                 doc.setCharacterAttributes(start, end - start, style, false);
+                String contenidoTexto = contenidoPane.getText();
+                String atributosHTML = getDocumentHTML(); 
+                   materiasData
+                    .get(currentMateria)
+                        .setContenidoTema(currentTema, contenidoTexto, atributosHTML); 
+                
             }
         });
 
@@ -531,6 +553,11 @@ public class Nota extends javax.swing.JFrame {
                 boolean isItalic = StyleConstants.isItalic(contenidoPane.getCharacterAttributes());
                 StyleConstants.setItalic(style, !isItalic);
                 doc.setCharacterAttributes(start, end - start, style, false);
+                String contenidoTexto = contenidoPane.getText();
+                String atributosHTML = getDocumentHTML();
+                materiasData
+                    .get(currentMateria)
+                    .setContenidoTema(currentTema, contenidoTexto, atributosHTML);
             }
         });
 
@@ -551,6 +578,11 @@ public class Nota extends javax.swing.JFrame {
                             javax.swing.text.Style style = contenidoPane.addStyle("Color", null);
                             StyleConstants.setForeground(style, selected);
                             doc.setCharacterAttributes(start, end - start, style, false);
+                            String contenidoTexto = contenidoPane.getText();
+                            String atributosHTML = getDocumentHTML();
+                            materiasData
+                                .get(currentMateria)
+                                .setContenidoTema(currentTema, contenidoTexto, atributosHTML);
                         }
                     }
                 },
@@ -568,6 +600,11 @@ public class Nota extends javax.swing.JFrame {
                 javax.swing.text.Style style = contenidoPane.addStyle("Size", null);
                 StyleConstants.setFontSize(style, Integer.parseInt((String)sizeCombo.getSelectedItem()));
                 doc.setCharacterAttributes(start, end - start, style, false);
+                String contenidoTexto = contenidoPane.getText();
+                String atributosHTML = getDocumentHTML();
+                materiasData
+                    .get(currentMateria)
+                    .setContenidoTema(currentTema, contenidoTexto, atributosHTML);               
             }
         });
         
@@ -842,6 +879,11 @@ public class Nota extends javax.swing.JFrame {
     // Implement guardarDatos method
     private void guardarDatos() {
         try (Writer writer = new FileWriter(DATA_FILE)) {
+        String contenidoTexto = contenidoPane.getText();
+        String atributosHTML = getDocumentHTML();
+        materiasData
+            .get(currentMateria)
+            .setContenidoTema(currentTema, contenidoTexto, atributosHTML);    
             gson.toJson(materiasData, writer);
         } catch (Exception e) {
             e.printStackTrace();
