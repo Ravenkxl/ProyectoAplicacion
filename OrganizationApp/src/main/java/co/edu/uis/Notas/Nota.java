@@ -65,6 +65,7 @@ public class Nota extends javax.swing.JFrame {
          }
      }
     private static final String DATA_FILE = "notas_data.json";
+    private Map<String, JLabel> notaFinalLabels = new HashMap<>();
 
     private Gson createGson() {
         return new GsonBuilder()
@@ -313,12 +314,16 @@ public class Nota extends javax.swing.JFrame {
         panel.add(iconLabel, BorderLayout.CENTER);
         panel.add(nameLabel, BorderLayout.SOUTH);
 
-        if (!nombre.equals("+ Nueva Materia") && !nombre.equals("+ Nuevo Tema")) {
+        // Detectar si es un panel de tema o materia
+        boolean esMateria = !nombre.equals("+ Nueva Materia") && !nombre.equals("+ Nuevo Tema") && !materiasData.values().stream().anyMatch(m -> m.getTemas().contains(nombre));
+        boolean esTema = materiasData.values().stream().anyMatch(m -> m.getTemas().contains(nombre));
+
+        if (esMateria) {
+            // Botón X para eliminar materia
             JButton deleteBtn = new JButton("X");
             deleteBtn.setFont(new Font("Arial", Font.BOLD, 10));
             deleteBtn.setMargin(new Insets(1, 4, 1, 4));
             deleteBtn.addActionListener(e -> {
-                // Create modal dialog properly parented
                 Window parentWindow = SwingUtilities.getWindowAncestor(mainContentPanel);
                 JDialog confirmDialog;
                 if (parentWindow instanceof Frame) {
@@ -331,26 +336,24 @@ public class Nota extends javax.swing.JFrame {
                 confirmDialog.setLayout(new BorderLayout(10, 10));
                 confirmDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
                 confirmDialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-                
+
                 JPanel dialogPanel = new JPanel(new BorderLayout(10, 10));
                 dialogPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
                 dialogPanel.setBackground(Color.WHITE);
-                
+
                 JLabel msgLabel = new JLabel("¿Está seguro de eliminar esta materia?");
                 dialogPanel.add(msgLabel, BorderLayout.CENTER);
-                
+
                 JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
                 buttonPanel.setBackground(Color.WHITE);
-                
+
                 JButton yesButton = new JButton("Sí");
                 JButton noButton = new JButton("No");
-                
+
                 yesButton.addActionListener(ev -> {
                     materiasData.remove(nombre);
                     guardarDatos();
                     carpetasPanel.removeAll();
-                    
-                    // Add all existing materias
                     for (Map.Entry<String, MateriaData> entry : materiasData.entrySet()) {
                         JPanel materiaPanel = createFolderPanel(entry.getKey(), entry.getValue().color);
                         final String materiaName = entry.getKey();
@@ -362,8 +365,6 @@ public class Nota extends javax.swing.JFrame {
                         });
                         carpetasPanel.add(materiaPanel);
                     }
-                    
-                    // Add the "Nueva Materia" button
                     JPanel addMateriaPanel = createFolderPanel("+ Nueva Materia", null);
                     addMateriaPanel.addMouseListener(new MouseAdapter() {
                         @Override
@@ -372,25 +373,51 @@ public class Nota extends javax.swing.JFrame {
                         }
                     });
                     carpetasPanel.add(addMateriaPanel);
-                    
                     carpetasPanel.revalidate();
                     carpetasPanel.repaint();
                     confirmDialog.dispose();
                 });
-                
+
                 noButton.addActionListener(ev -> confirmDialog.dispose());
-                
                 buttonPanel.add(yesButton);
                 buttonPanel.add(noButton);
                 dialogPanel.add(buttonPanel, BorderLayout.SOUTH);
-                
                 confirmDialog.add(dialogPanel);
                 confirmDialog.pack();
-                confirmDialog.setLocationRelativeTo(SwingUtilities.getWindowAncestor(mainContentPanel));
+                confirmDialog.setLocationRelativeTo(mainContentPanel);
                 confirmDialog.setAlwaysOnTop(true);
                 confirmDialog.setVisible(true);
             });
-            
+            JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+            topPanel.setOpaque(false);
+            topPanel.add(deleteBtn);
+            panel.add(topPanel, BorderLayout.NORTH);
+        } else if (esTema) {
+            // Botón X para eliminar tema
+            JButton deleteBtn = new JButton("X");
+            deleteBtn.setFont(new Font("Arial", Font.BOLD, 10));
+            deleteBtn.setMargin(new Insets(1, 4, 1, 4));
+            deleteBtn.addActionListener(e -> {
+                // Buscar la materia a la que pertenece este tema
+                String materiaPadre = null;
+                for (Map.Entry<String, MateriaData> entry : materiasData.entrySet()) {
+                    if (entry.getValue().getTemas().contains(nombre)) {
+                        materiaPadre = entry.getKey();
+                        break;
+                    }
+                }
+                if (materiaPadre != null) {
+                    int confirm = JOptionPane.showConfirmDialog(panel, "¿Está seguro de eliminar el tema '" + nombre + "'?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
+                    if (confirm == JOptionPane.YES_OPTION) {
+                        MateriaData data = materiasData.get(materiaPadre);
+                        if (data != null) {
+                            data.temas.remove(nombre);
+                            guardarDatos();
+                            mostrarContenidoMateria(materiaPadre);
+                        }
+                    }
+                }
+            });
             JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
             topPanel.setOpaque(false);
             topPanel.add(deleteBtn);
@@ -431,10 +458,10 @@ public class Nota extends javax.swing.JFrame {
         colorButton.setBackground(selectedColor);
         
         colorButton.addActionListener(e -> {
-            Window parentWindow = SwingUtilities.getWindowAncestor(dialog);
+            // Usar el propio dialog como padre para el selector de color
             JColorChooser colorChooser = new JColorChooser(selectedColor);
             JDialog colorDialog = JColorChooser.createDialog(
-                parentWindow,
+                dialog, // <-- aquí el cambio: usar 'dialog' como padre
                 "Seleccionar Color",
                 true,
                 colorChooser,
@@ -787,13 +814,14 @@ public class Nota extends javax.swing.JFrame {
                         data.calcularAcumulado();
                         DefaultTableModel tableModel = (DefaultTableModel)table.getModel();
                         tableModel.removeRow(selectedRow);
-                        
                         // Update the other table if it exists
                         JTable otherTable = (table == miniNotasTable) ? currentNotasTable : miniNotasTable;
                         if (otherTable != null) {
                             ((DefaultTableModel)otherTable.getModel()).removeRow(selectedRow);
                         }
                         guardarDatos();
+                        // Refrescar la vista de la materia después de eliminar la nota
+                        SwingUtilities.invokeLater(() -> mostrarContenidoMateria(materia));
                     }
                 }
             }
@@ -811,6 +839,7 @@ public class Nota extends javax.swing.JFrame {
         JLabel notaFinalLabel = new JLabel(String.format("Nota Final: %.2f", data.getNotaTotal()));
         notaFinalLabel.setFont(new Font("Arial", Font.BOLD, 14));
         statusPanel.add(notaFinalLabel);
+        notaFinalLabels.put(materia, notaFinalLabel);
         
         // Panel para botones y nota final
         JPanel bottomPanel = new JPanel(new BorderLayout());
@@ -858,8 +887,9 @@ public class Nota extends javax.swing.JFrame {
                     }
                     data.addTema(nombre);
                     guardarDatos();
-                    mostrarContenidoMateria(materia);
                     dialog.dispose();
+                    // Refrescar la vista de la materia después de cerrar el diálogo
+                    SwingUtilities.invokeLater(() -> mostrarContenidoMateria(materia));
                 }
             }
         });
@@ -879,11 +909,11 @@ public class Nota extends javax.swing.JFrame {
     // Implement guardarDatos method
     private void guardarDatos() {
         try (Writer writer = new FileWriter(DATA_FILE)) {
-        String contenidoTexto = contenidoPane.getText();
-        String atributosHTML = getDocumentHTML();
-        materiasData
-            .get(currentMateria)
-            .setContenidoTema(currentTema, contenidoTexto, atributosHTML);    
+            if (currentMateria != null && currentTema != null && materiasData.get(currentMateria) != null) {
+                String contenidoTexto = contenidoPane.getText();
+                String atributosHTML = getDocumentHTML();
+                materiasData.get(currentMateria).setContenidoTema(currentTema, contenidoTexto, atributosHTML);
+            }
             gson.toJson(materiasData, writer);
         } catch (Exception e) {
             e.printStackTrace();
@@ -933,16 +963,10 @@ public class Nota extends javax.swing.JFrame {
                 MateriaData data = materiasData.get(materia);
                 if (data != null) {
                     data.addNota(titulo, nota, porcentaje);
-                    
-                    // Update UI in the EventDispatch thread
-                    SwingUtilities.invokeLater(() -> {
-                        NotaData nuevaNota = data.getNotas().get(data.getNotas().size() - 1);
-                        model.addRow(nuevaNota.toTableRow());
-                        updateNotaFinalLabel(table, data);
-                        guardarDatos();
-                    });
-                    
+                    guardarDatos();
                     dialog.dispose();
+                    // Refrescar la vista de la materia después de cerrar el diálogo
+                    SwingUtilities.invokeLater(() -> mostrarContenidoMateria(materia));
                 }
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(dialog,
@@ -986,21 +1010,10 @@ public class Nota extends javax.swing.JFrame {
 
     // Helper method to update nota final label
     private void updateNotaFinalLabel(JTable table, MateriaData data) {
-        Container parent = table.getParent();
-        while (parent != null && !(parent instanceof JPanel)) {
-            parent = parent.getParent();
-        }
-        if (parent instanceof JPanel) {
-            JPanel panelParent = (JPanel) parent;
-            for (Component comp : panelParent.getComponents()) {
-                if (comp instanceof JPanel) {
-                    for (Component subComp : ((JPanel) comp).getComponents()) {
-                        if (subComp instanceof JLabel) {
-                            
-                        }
-                    }
-                }
-            }
+        if (data == null) return;
+        JLabel label = notaFinalLabels.get(currentMateria);
+        if (label != null) {
+            label.setText(String.format("Nota Final: %.2f", data.getNotaTotal()));
         }
     }
 }

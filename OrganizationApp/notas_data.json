@@ -1,0 +1,16 @@
+{
+  "FDASF": {
+    "color": {
+      "rgb": -205
+    },
+    "temas": {
+      "null": "DASDASDASD FDSFSDFSD fdFSDF fdsfd fdsf  fdfds dfdsfds fdsf sdfdsf",
+      "ASDSAD": ""
+    },
+    "notas": [],
+    "acumulado": 0.0,
+    "temasAtributos": {
+      "null": "\u003chtml\u003e\r\n  \u003chead\u003e\r\n    \u003cstyle\u003e\r\n      \u003c!--\r\n        p.default {\r\n          family:Dialog;\r\n          size:3;\r\n          bold:normal;\r\n          italic:;\r\n          foreground:#333333;\r\n        }\r\n        p.Bold {\r\n          bold:normal;\r\n        }\r\n        p.Italic {\r\n          italic:italic;\r\n        }\r\n        p.Color {\r\n          foreground:#ff6666;\r\n        }\r\n      --\u003e\r\n    \u003c/style\u003e\r\n  \u003c/head\u003e\r\n  \u003cbody\u003e\r\n    \u003cp class\u003ddefault\u003e\r\n      \u003cspan style\u003d\"color: #333333; font-size: 12pt; font-family: Dialog\"\u003e\r\n        DASD\r\n      \u003c/span\u003e\r\n      \u003cspan style\u003d\"color: #333333; font-size: 12pt; font-family: Dialog\"\u003e\r\n        \u003cb\u003eASDASD FDSFSDFSD fdFSDF fdsfd\u003c/b\u003e\r\n      \u003c/span\u003e\r\n      \u003cspan style\u003d\"color: #333333; font-size: 12pt; font-family: Dialog\"\u003e\r\n         fdsf  fdfds dfdsfds \r\n      \u003c/span\u003e\r\n      \u003cspan style\u003d\"color: #333333; font-size: 12pt; font-family: Dialog\"\u003e\r\n        \u003ci\u003efdsf sd\u003c/i\u003e\r\n      \u003c/span\u003e\r\n      \u003cspan style\u003d\"color: #ff6666; font-size: 12pt; font-family: Dialog\"\u003e\r\n        \u003ci\u003efds\u003c/i\u003e\r\n      \u003c/span\u003e\r\n      \u003cspan style\u003d\"color: #333333; font-size: 12pt; font-family: Dialog\"\u003e\r\n        \u003ci\u003ef\u003c/i\u003e\r\n      \u003c/span\u003e\r\n    \u003c/p\u003e\r\n  \u003c/body\u003e\r\n\u003c/html\u003e\r\n"
+    }
+  }
+}
