@@ -115,9 +115,9 @@ public class Nota extends javax.swing.JFrame {
         private static final long serialVersionUID = 1L;
         private Color color;
         private Map<String, String> temas;
-        private ArrayList<NotaData> notas; // Changed from List to ArrayList
+        private ArrayList<NotaData> notas; 
         private double acumulado;
-        private Map<String, String> temasAtributos; // Add this field
+        private Map<String, String> temasAtributos; 
         
         public MateriaData(Color color) {
             this.color = color != null ? color : Color.WHITE;
@@ -157,7 +157,7 @@ public class Nota extends javax.swing.JFrame {
             }
             
             if (totalPorcentaje > 0) {
-                acumulado = Math.round(acumulado * 100.0) / 100.0; // Redondear a 2 decimales
+                acumulado = Math.round(acumulado * 100.0) / 100.0; 
             }
         }
         
@@ -203,7 +203,7 @@ public class Nota extends javax.swing.JFrame {
         this.materiasData = cargarDatos();
         contenidoPane = new JTextPane();
         contenidoPane.setEditable(true);
-        contenidoPane.putClientProperty("caretWidth", 1); // Better caret
+        contenidoPane.putClientProperty("caretWidth", 1);
         edicionToolbar = new JToolBar();
         configurarVentana();
         
@@ -450,10 +450,10 @@ JPanel addMateriaPanel = createFolderPanel("+ Nueva Materia", null);
         colorButton.setBackground(selectedColor);
         
         colorButton.addActionListener(e -> {
-            // Usar el propio dialog como padre para el selector de color
+            
             JColorChooser colorChooser = new JColorChooser(selectedColor);
             JDialog colorDialog = JColorChooser.createDialog(
-                dialog, // <-- aquí el cambio: usar 'dialog' como padre
+                dialog, 
                 "Seleccionar Color",
                 true,
                 colorChooser,
@@ -578,9 +578,9 @@ JPanel addMateriaPanel = createFolderPanel("+ Nueva Materia", null);
         colorBtn.addActionListener(e -> {
             JColorChooser colorChooser = new JColorChooser(Color.BLACK);
             final JDialog dialog = JColorChooser.createDialog(
-                SwingUtilities.getWindowAncestor(this),  // Parent to main frame
+                SwingUtilities.getWindowAncestor(this), 
                 "Seleccionar Color",
-                true,  // Make it modal
+                true, 
                 colorChooser,
                 event -> {
                     Color selected = colorChooser.getColor();
@@ -661,7 +661,7 @@ JPanel addMateriaPanel = createFolderPanel("+ Nueva Materia", null);
         edicionToolbar.add(linkBtn);
         
         JPanel volverPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton volverBtn = new JButton("Volver");  // Changed from "Volver a Temas" to "Volver"
+        JButton volverBtn = new JButton("Volver"); 
         volverBtn.addActionListener(e -> {
             guardarDatos();
             if (currentMateria != null) {
@@ -688,13 +688,13 @@ JPanel addMateriaPanel = createFolderPanel("+ Nueva Materia", null);
     private void insertFileLink(String path, String displayName) {
         try {
             StyledDocument doc = contenidoPane.getStyledDocument();
-            javax.swing.text.Style style = contenidoPane.addStyle("FileLink", null);
-            StyleConstants.setForeground(style, Color.BLUE);
-            StyleConstants.setUnderline(style, true);
-            style.addAttribute("filePath", path);
-            doc.insertString(contenidoPane.getCaretPosition(), "[" + displayName + "]\n", style);
             
-            // Save content immediately after inserting link
+            // Insert the path as plain text
+            doc.insertString(contenidoPane.getCaretPosition(), path + "\n", null);
+            
+            // Save content and file path attribute
+            String contenidoTexto = contenidoPane.getText();
+            materiasData.get(currentMateria).setContenidoTema(currentTema, contenidoTexto, path);
             guardarDatos();
             
         } catch (Exception ex) {
@@ -722,7 +722,7 @@ JPanel addMateriaPanel = createFolderPanel("+ Nueva Materia", null);
     
     private void mostrarContenidoMateria(String materia) {
         JPanel materiaPanel = new JPanel(new BorderLayout());
-        materiaPanel.setName("MATERIA_" + materia); // Add this line
+        materiaPanel.setName("MATERIA_" + materia); 
         materiaPanel.setBackground(Color.WHITE);
 
         JPanel horizontalPanel = new JPanel(new GridLayout(1, 2, 10, 0));
@@ -794,7 +794,7 @@ JPanel addMateriaPanel = createFolderPanel("+ Nueva Materia", null);
             new Object[]{"Evaluación", "Nota", "Porcentaje", "Ponderado"}, 0
         );
         JTable table = new JTable(model);
-        currentNotasTable = table;  // Store reference to main table
+        currentNotasTable = table; 
         
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         buttonPanel.setBackground(Color.WHITE);
@@ -997,21 +997,28 @@ JPanel addMateriaPanel = createFolderPanel("+ Nueva Materia", null);
             contenidoPane.setText(contenido != null ? contenido : "");
         }
 
-        // Add mouse listener for file links
+        // Add mouse listener for file paths
         contenidoPane.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 try {
+                    // Get selected line
                     int offset = contenidoPane.viewToModel2D(e.getPoint());
-                    StyledDocument doc = contenidoPane.getStyledDocument();
-                    Element element = doc.getCharacterElement(offset);
-                    AttributeSet as = element.getAttributes();
-                    Object filePath = as.getAttribute("filePath");
-                    if (filePath != null) {
-                        Desktop.getDesktop().open(new File(filePath.toString()));
+                    int line = contenidoPane.getDocument().getDefaultRootElement()
+                            .getElementIndex(offset);
+                    int start = contenidoPane.getDocument().getDefaultRootElement()
+                            .getElement(line).getStartOffset();
+                    int end = contenidoPane.getDocument().getDefaultRootElement()
+                            .getElement(line).getEndOffset();
+                    String text = contenidoPane.getText(start, end - start).trim();
+
+                    // Try to open file if path exists
+                    File file = new File(text);
+                    if (file.exists()) {
+                        Desktop.getDesktop().open(file);
                     }
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    // Ignore if not a valid file path
                 }
             }
         });
