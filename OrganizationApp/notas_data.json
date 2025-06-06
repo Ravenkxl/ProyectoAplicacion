@@ -1,0 +1,16 @@
+{
+  "programacion": {
+    "color": {
+      "rgb": -10066177
+    },
+    "temas": {
+      "null": "hola",
+      "encapsulacion": ""
+    },
+    "notas": [],
+    "acumulado": 0.0,
+    "temasAtributos": {
+      "null": "\u003chtml\u003e\r\n  \u003chead\u003e\r\n    \u003cstyle\u003e\r\n      \u003c!--\r\n        p.default {\r\n          family:Dialog;\r\n          size:3;\r\n          bold:normal;\r\n          italic:;\r\n          foreground:#333333;\r\n        }\r\n        p.Bold {\r\n          bold:bold;\r\n        }\r\n        p.Size {\r\n          size:6;\r\n        }\r\n      --\u003e\r\n    \u003c/style\u003e\r\n  \u003c/head\u003e\r\n  \u003cbody\u003e\r\n    \u003cp class\u003ddefault\u003e\r\n      \u003cspan style\u003d\"color: #333333; font-size: 20pt; font-family: Dialog\"\u003e\r\n        \u003cb\u003ehola\u003c/b\u003e\r\n      \u003c/span\u003e\r\n    \u003c/p\u003e\r\n  \u003c/body\u003e\r\n\u003c/html\u003e\r\n"
+    }
+  }
+}

@@ -19,7 +19,7 @@ public class NotasData {
     public static class Tema {
         private String nombre;
         private String contenido;
-        private String formatoTexto; // Guardará el formato RTF
+        private String formatoTexto; 
         
         public Tema(String nombre) {
             this.nombre = nombre;
