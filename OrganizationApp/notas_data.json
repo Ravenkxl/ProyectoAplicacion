@@ -1,16 +1,15 @@
 {
   "programacion": {
     "color": {
-      "rgb": -10066177
+      "rgb": -1
     },
     "temas": {
-      "null": "hola",
-      "encapsulacion": ""
+      "patron de diseño": "factory method\r\nFactory-Method.pdf\r\n"
     },
     "notas": [],
     "acumulado": 0.0,
     "temasAtributos": {
-      "null": "\u003chtml\u003e\r\n  \u003chead\u003e\r\n    \u003cstyle\u003e\r\n      \u003c!--\r\n        p.default {\r\n          family:Dialog;\r\n          size:3;\r\n          bold:normal;\r\n          italic:;\r\n          foreground:#333333;\r\n        }\r\n        p.Bold {\r\n          bold:bold;\r\n        }\r\n        p.Size {\r\n          size:6;\r\n        }\r\n      --\u003e\r\n    \u003c/style\u003e\r\n  \u003c/head\u003e\r\n  \u003cbody\u003e\r\n    \u003cp class\u003ddefault\u003e\r\n      \u003cspan style\u003d\"color: #333333; font-size: 20pt; font-family: Dialog\"\u003e\r\n        \u003cb\u003ehola\u003c/b\u003e\r\n      \u003c/span\u003e\r\n    \u003c/p\u003e\r\n  \u003c/body\u003e\r\n\u003c/html\u003e\r\n"
+      "patron de diseño": "\u003cspan data-filepath\u003d\"C:\\Users\\LENOVO E490\\OneDrive\\Documents\\Factory-Method.pdf\"\u003e\u003cspan data-filepath\u003d\"C:\\Users\\LENOVO E490\\OneDrive\\Documents\\Factory-Method.pdf\"\u003e\u003cspan data-filepath\u003d\"C:\\Users\\LENOVO E490\\OneDrive\\Documents\\Factory-Method.pdf\"\u003e\u003cspan data-filepath\u003d\"C:\\Users\\LENOVO E490\\OneDrive\\Documents\\Factory-Method.pdf\"\u003e\u003cspan data-filepath\u003d\"C:\\Users\\LENOVO E490\\OneDrive\\Documents\\Factory-Method.pdf\"\u003e\u003cspan data-filepath\u003d\"C:\\Users\\LENOVO E490\\OneDrive\\Documents\\Factory-Method.pdf\"\u003e\u003cspan data-filepath\u003d\"C:\\Users\\LENOVO E490\\OneDrive\\Documents\\Factory-Method.pdf\"\u003e\u003cspan data-filepath\u003d\"C:\\Users\\LENOVO E490\\OneDrive\\Documents\\Factory-Method.pdf\"\u003e\u003cspan data-filepath\u003d\"C:\\Users\\LENOVO E490\\OneDrive\\Documents\\Factory-Method.pdf\"\u003e\u003cspan data-filepath\u003d\"C:\\Users\\LENOVO E490\\OneDrive\\Documents\\Factory-Method.pdf\"\u003e\u003cspan data-filepath\u003d\"C:\\Users\\LENOVO E490\\OneDrive\\Documents\\Factory-Method.pdf\"\u003e\u003cspan data-filepath\u003d\"C:\\Users\\LENOVO E490\\OneDrive\\Documents\\Factory-Method.pdf\"\u003e\u003cspan data-filepath\u003d\"C:\\Users\\LENOVO E490\\OneDrive\\Documents\\Factory-Method.pdf\"\u003e\u003cspan data-filepath\u003d\"C:\\Users\\LENOVO E490\\OneDrive\\Documents\\Factory-Method.pdf\"\u003e\u003cspan data-filepath\u003d\"C:\\Users\\LENOVO E490\\OneDrive\\Documents\\Factory-Method.pdf\"\u003e\u003cspan data-filepath\u003d\"C:\\Users\\LENOVO E490\\OneDrive\\Documents\\Factory-Method.pdf\"\u003e\u003cspan data-filepath\u003d\"C:\\Users\\LENOVO E490\\OneDrive\\Documents\\Factory-Method.pdf\"\u003e\u003cspan data-filepath\u003d\"C:\\Users\\LENOVO E490\\OneDrive\\Documents\\Factory-Method.pdf\"\u003e\u003cspan data-filepath\u003d\"C:\\Users\\LENOVO E490\\OneDrive\\Documents\\Factory-Method.pdf\"\u003e\u003chtml\u003e\r\n  \u003chead\u003e\r\n    \u003cstyle\u003e\r\n      \u003c!--\r\n        p.default {\r\n          family:Dialog;\r\n          size:3;\r\n          bold:normal;\r\n          italic:;\r\n          foreground:#333333;\r\n        }\r\n        p.FileLink {\r\n          foreground:#0000ff;\r\n          underline:underline;\r\n        }\r\n      --\u003e\r\n    \u003c/style\u003e\r\n  \u003c/head\u003e\r\n  \u003cbody\u003e\r\n    \u003cp class\u003ddefault\u003e\r\n      \u003cspan style\u003d\"color: #333333; font-size: 12pt; font-family: Dialog\"\u003e\r\n        factory method\r\n      \u003c/span\u003e\r\n    \u003c/p\u003e\r\n    \u003cp class\u003ddefault\u003e\r\n      \u003cspan style\u003d\"color: #0000ff; font-size: 12pt; font-family: Dialog\"\u003e\r\n        \u003cu\u003eFactory-Method.pdf\u003c/u\u003e\r\n      \u003c/span\u003e\r\n    \u003c/p\u003e\r\n  \u003c/body\u003e\r\n\u003c/html\u003e\r\n"
     }
   }
 }
