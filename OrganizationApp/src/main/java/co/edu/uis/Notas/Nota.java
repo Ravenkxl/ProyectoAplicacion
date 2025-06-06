@@ -1,9 +1,5 @@
 package co.edu.uis.Notas;
 
-/**
- *
- * @author Karol Hernandez
- */
 import javax.swing.*;
 import javax.swing.tree.*;
 import java.awt.*;
@@ -31,9 +27,21 @@ import java.io.StringWriter;
 
 
 public class Nota extends javax.swing.JFrame {
-    // Add these fields at the class level
     private JTable miniNotasTable;
     private JTable currentNotasTable;
+
+    private String getDocumentHTML() {
+        try {
+            StyledDocument doc = contenidoPane.getStyledDocument();
+            HTMLEditorKit kit = new HTMLEditorKit();
+            StringWriter writer = new StringWriter();
+            kit.write(writer, doc, 0, doc.getLength());
+            return writer.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
     private JTree navegacionTree;
     private DefaultTreeModel treeModel;
     private JTextPane contenidoPane;
@@ -46,24 +54,10 @@ public class Nota extends javax.swing.JFrame {
     private JPanel mainContentPanel;
     private JPanel carpetasPanel;
     private Color selectedColor;
-    // Modificar las estructuras de datos
     private Map<String, MateriaData> materiasData;
     private String currentTema;
-    private String currentMateria; // Add this field to track the current materia
-    
+    private String currentMateria;    
     private final Gson gson;
-    private String getDocumentHTML() {
-         try {
-             HTMLEditorKit kit = new HTMLEditorKit();
-             StringWriter writer = new StringWriter();
-             // Escribe todo el documento (desde offset 0 hasta length) en writer:
-             kit.write(writer, contenidoPane.getDocument(), 0, contenidoPane.getDocument().getLength());
-             return writer.toString();
-         } catch (Exception ex) {
-             ex.printStackTrace();
-             return "";
-         }
-     }
     private static final String DATA_FILE = "notas_data.json";
 
     private Gson createGson() {
@@ -104,7 +98,6 @@ public class Nota extends javax.swing.JFrame {
             .create();
     }
 
-    // Clase interna para mantener los datos de cada materia
     private static class MateriaData implements Serializable {
         private static final long serialVersionUID = 1L;
         private Color color;
@@ -150,7 +143,6 @@ public class Nota extends javax.swing.JFrame {
                 totalPorcentaje += nota.porcentaje;
             }
             
-            // No ajustar el acumulado si no hay 100%
             if (totalPorcentaje > 0) {
                 acumulado = Math.round(acumulado * 100.0) / 100.0; // Redondear a 2 decimales
             }
@@ -192,9 +184,6 @@ public class Nota extends javax.swing.JFrame {
     }
     
 
-    /**
-     * Creates new form Nota
-     */
     public Nota() {
         initComponents();
         this.gson = createGson();
@@ -213,7 +202,6 @@ public class Nota extends javax.swing.JFrame {
         });
     }
 
-    // Implementación de cargarDatos para inicializar materiasData desde el archivo JSON
     private Map<String, MateriaData> cargarDatos() {
         File file = new File(DATA_FILE);
         if (!file.exists()) {
@@ -243,7 +231,6 @@ public class Nota extends javax.swing.JFrame {
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(Color.WHITE);
         
-        // Header
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(new Color(51, 153, 255));
         JLabel titleLabel = new JLabel("Sistema de Notas", SwingConstants.CENTER);
@@ -251,13 +238,11 @@ public class Nota extends javax.swing.JFrame {
         titleLabel.setForeground(Color.WHITE);
         headerPanel.add(titleLabel, BorderLayout.CENTER);
         
-        // Main content with cards
         mainContentPanel = new JPanel(new CardLayout());
         mainContentPanel.setBackground(Color.WHITE);
         carpetasPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 20));
         carpetasPanel.setBackground(Color.WHITE);
         
-        // Agregar botón de nueva materia
         JPanel addMateriaPanel = createFolderPanel("+ Nueva Materia", null);
         addMateriaPanel.addMouseListener(new MouseAdapter() {
             @Override
@@ -267,7 +252,6 @@ public class Nota extends javax.swing.JFrame {
         });
         carpetasPanel.add(addMateriaPanel);
 
-        // AGREGAR TODAS LAS MATERIAS GUARDADAS AL INICIAR
         for (Map.Entry<String, MateriaData> entry : materiasData.entrySet()) {
             String nombre = entry.getKey();
             Color color = entry.getValue().color;
@@ -278,14 +262,12 @@ public class Nota extends javax.swing.JFrame {
                     mostrarContenidoMateria(nombre);
                 }
             });
-            // Insertar antes del botón '+ Nueva Materia'
             carpetasPanel.add(materiaPanel, carpetasPanel.getComponentCount() - 1);
         }
         
         JScrollPane scrollPane = new JScrollPane(carpetasPanel);
         mainContentPanel.add(scrollPane, "MATERIAS");
         
-        // Configurar paneles de contenido
         contentCards = new JPanel(new CardLayout());
         apuntesPanel = createApuntesPanel();
         notasPanel = createNotasPanel();
@@ -318,7 +300,6 @@ public class Nota extends javax.swing.JFrame {
             deleteBtn.setFont(new Font("Arial", Font.BOLD, 10));
             deleteBtn.setMargin(new Insets(1, 4, 1, 4));
             deleteBtn.addActionListener(e -> {
-                // Create modal dialog properly parented
                 Window parentWindow = SwingUtilities.getWindowAncestor(mainContentPanel);
                 JDialog confirmDialog;
                 if (parentWindow instanceof Frame) {
@@ -350,7 +331,6 @@ public class Nota extends javax.swing.JFrame {
                     guardarDatos();
                     carpetasPanel.removeAll();
                     
-                    // Add all existing materias
                     for (Map.Entry<String, MateriaData> entry : materiasData.entrySet()) {
                         JPanel materiaPanel = createFolderPanel(entry.getKey(), entry.getValue().color);
                         final String materiaName = entry.getKey();
@@ -363,7 +343,6 @@ public class Nota extends javax.swing.JFrame {
                         carpetasPanel.add(materiaPanel);
                     }
                     
-                    // Add the "Nueva Materia" button
                     JPanel addMateriaPanel = createFolderPanel("+ Nueva Materia", null);
                     addMateriaPanel.addMouseListener(new MouseAdapter() {
                         @Override
@@ -401,7 +380,6 @@ public class Nota extends javax.swing.JFrame {
     }
 
     private void crearNuevaMateria() {
-        // Create modal dialog with proper parent window reference
         Window owner = SwingUtilities.getWindowAncestor(mainContentPanel);
         if (owner == null) owner = this;
         
@@ -421,7 +399,6 @@ public class Nota extends javax.swing.JFrame {
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         mainPanel.setBackground(Color.WHITE);
         
-        // Input panel
         JPanel inputPanel = new JPanel(new GridLayout(2, 2, 5, 5));
         inputPanel.setBackground(Color.WHITE);
         
@@ -457,7 +434,6 @@ public class Nota extends javax.swing.JFrame {
         inputPanel.add(colorButton);
         mainPanel.add(inputPanel, BorderLayout.CENTER);
         
-        // Button panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         buttonPanel.setBackground(Color.WHITE);
         JButton okButton = new JButton("Aceptar");
@@ -475,7 +451,6 @@ public class Nota extends javax.swing.JFrame {
                 return;
             }
             
-            // Update UI in the EventDispatch thread
             SwingUtilities.invokeLater(() -> {
                 JPanel materiaPanel = createFolderPanel(nombre, selectedColor);
                 materiasData.put(nombre, new MateriaData(selectedColor));
@@ -514,10 +489,8 @@ public class Nota extends javax.swing.JFrame {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(Color.WHITE);
         
-        // Panel superior
         JPanel topPanel = new JPanel(new BorderLayout());
         
-        // Toolbar de edición
         edicionToolbar = new JToolBar();
         edicionToolbar.setFloatable(false);
         JButton boldBtn = new JButton("Negrita");
@@ -525,7 +498,6 @@ public class Nota extends javax.swing.JFrame {
         JButton colorBtn = new JButton("Color");
         JComboBox<String> sizeCombo = new JComboBox<>(new String[]{"12", "14", "16", "18", "20", "24"});
         
-        // Configurar botones
         boldBtn.addActionListener(e -> {
             StyledDocument doc = contenidoPane.getStyledDocument();
             int start = contenidoPane.getSelectionStart();
@@ -605,6 +577,7 @@ public class Nota extends javax.swing.JFrame {
                 materiasData
                     .get(currentMateria)
                     .setContenidoTema(currentTema, contenidoTexto, atributosHTML);               
+
             }
         });
         
@@ -614,7 +587,6 @@ public class Nota extends javax.swing.JFrame {
         edicionToolbar.add(new JLabel("Tamaño: "));
         edicionToolbar.add(sizeCombo);
         
-        // Add file link button to toolbar
         JButton linkBtn = new JButton("Agregar Archivo");
         linkBtn.addActionListener(e -> {
             JFileChooser fc = new JFileChooser();
@@ -625,7 +597,6 @@ public class Nota extends javax.swing.JFrame {
         });
         edicionToolbar.add(linkBtn);
         
-        // Agregar botón volver en un panel separado
         JPanel volverPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton volverBtn = new JButton("Volver");  // Changed from "Volver a Temas" to "Volver"
         volverBtn.addActionListener(e -> {
@@ -638,13 +609,11 @@ public class Nota extends javax.swing.JFrame {
         });
         volverPanel.add(volverBtn);
         
-        // Organizar toolbar y botón volver
         topPanel.add(edicionToolbar, BorderLayout.CENTER);
         topPanel.add(volverPanel, BorderLayout.EAST);
         
         panel.add(topPanel, BorderLayout.NORTH);
         
-        // Create a panel to hold the scrollPane
         JPanel contentPanel = new JPanel(new BorderLayout());
         contentPanel.setBackground(Color.WHITE);
         contentPanel.add(new JScrollPane(contenidoPane), BorderLayout.CENTER);
@@ -689,11 +658,9 @@ public class Nota extends javax.swing.JFrame {
         materiaPanel.setName("MATERIA_" + materia); // Add this line
         materiaPanel.setBackground(Color.WHITE);
 
-        // Panel que contiene temas y notas lado a lado
         JPanel horizontalPanel = new JPanel(new GridLayout(1, 2, 10, 0));
         horizontalPanel.setBackground(Color.WHITE);
 
-        // Panel izquierdo para temas
         JPanel leftPanel = new JPanel(new BorderLayout());
         leftPanel.setBackground(Color.WHITE);
         JPanel carpetasTemasPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 20));
@@ -701,7 +668,6 @@ public class Nota extends javax.swing.JFrame {
 
         MateriaData data = materiasData.get(materia);
         if (data != null) {
-            // Mostrar temas existentes
             for (String tema : data.getTemas()) {
                 JPanel temaPanel = createFolderPanel(tema, data.color);
                 temaPanel.addMouseListener(new MouseAdapter() {
@@ -712,7 +678,6 @@ public class Nota extends javax.swing.JFrame {
                 carpetasTemasPanel.add(temaPanel);
             }
             
-            // Agregar botón de nuevo tema
             JPanel addTemaPanel = createFolderPanel("+ Nuevo Tema", null);
             addTemaPanel.addMouseListener(new MouseAdapter() {
                 @Override
@@ -725,7 +690,6 @@ public class Nota extends javax.swing.JFrame {
         
         leftPanel.add(new JScrollPane(carpetasTemasPanel), BorderLayout.CENTER);
         
-        // Panel derecho para notas
         JPanel rightPanel = createNotasPanelForMateria(materia);
         
         horizontalPanel.add(leftPanel);
@@ -733,7 +697,6 @@ public class Nota extends javax.swing.JFrame {
         
         materiaPanel.add(horizontalPanel, BorderLayout.CENTER);
         
-        // Botón volver
         JButton volverBtn = new JButton("Volver");
         volverBtn.addActionListener(e -> 
             ((CardLayout)mainContentPanel.getLayout()).show(mainContentPanel, "MATERIAS"));
@@ -751,18 +714,15 @@ public class Nota extends javax.swing.JFrame {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(Color.WHITE);
         
-        // Get materia data at the beginning
         MateriaData data = materiasData.get(materia);
         if (data == null) return panel;
 
-        // Panel superior
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setBackground(Color.WHITE);
         JLabel titleLabel = new JLabel("Notas de " + materia);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         topPanel.add(titleLabel, BorderLayout.NORTH);
         
-        // Tabla y botones
         DefaultTableModel model = new DefaultTableModel(
             new Object[]{"Evaluación", "Nota", "Porcentaje", "Ponderado"}, 0
         );
@@ -788,7 +748,6 @@ public class Nota extends javax.swing.JFrame {
                         DefaultTableModel tableModel = (DefaultTableModel)table.getModel();
                         tableModel.removeRow(selectedRow);
                         
-                        // Update the other table if it exists
                         JTable otherTable = (table == miniNotasTable) ? currentNotasTable : miniNotasTable;
                         if (otherTable != null) {
                             ((DefaultTableModel)otherTable.getModel()).removeRow(selectedRow);
@@ -805,14 +764,12 @@ public class Nota extends javax.swing.JFrame {
         panel.add(topPanel, BorderLayout.NORTH);
         panel.add(new JScrollPane(table), BorderLayout.CENTER);
         
-        // Agregar panel para nota final en la esquina inferior derecha
         JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         statusPanel.setBackground(Color.WHITE);
         JLabel notaFinalLabel = new JLabel(String.format("Nota Final: %.2f", data.getNotaTotal()));
         notaFinalLabel.setFont(new Font("Arial", Font.BOLD, 14));
         statusPanel.add(notaFinalLabel);
         
-        // Panel para botones y nota final
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.setBackground(Color.WHITE);
         bottomPanel.add(buttonPanel, BorderLayout.WEST);
@@ -820,7 +777,6 @@ public class Nota extends javax.swing.JFrame {
         
         panel.add(bottomPanel, BorderLayout.SOUTH);
         
-        // Cargar notas existentes
         if (data != null) {
             for (NotaData nota : data.getNotas()) {
                 model.addRow(nota.toTableRow());
@@ -830,7 +786,6 @@ public class Nota extends javax.swing.JFrame {
         return panel;
     }
 
-    // Método para crear un nuevo tema en una materia
     private void crearNuevoTema(String materia) {
         JDialog dialog = new JDialog(this, "Nuevo Tema", true);
         JTextField nombreField = new JTextField(20);
@@ -876,7 +831,6 @@ public class Nota extends javax.swing.JFrame {
         dialog.setVisible(true);
     }
 
-    // Implement guardarDatos method
     private void guardarDatos() {
         try (Writer writer = new FileWriter(DATA_FILE)) {
         String contenidoTexto = contenidoPane.getText();
@@ -890,9 +844,7 @@ public class Nota extends javax.swing.JFrame {
         }
     }
 
-    // Método para agregar una nueva nota a la materia (método de la clase externa Nota)
     private void agregarNota(String materia, JTable table, DefaultTableModel model) {
-        // Create modal dialog
         JDialog dialog = new JDialog(this, "Agregar Nota", true);
         dialog.setLayout(new BorderLayout(10, 10));
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
@@ -901,7 +853,6 @@ public class Nota extends javax.swing.JFrame {
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         mainPanel.setBackground(Color.WHITE);
 
-        // Input panel
         JPanel inputPanel = new JPanel(new GridLayout(3, 2, 5, 5));
         inputPanel.setBackground(Color.WHITE);
         
@@ -918,7 +869,6 @@ public class Nota extends javax.swing.JFrame {
         
         mainPanel.add(inputPanel, BorderLayout.CENTER);
 
-        // Button panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         buttonPanel.setBackground(Color.WHITE);
         JButton okButton = new JButton("Aceptar");
@@ -934,7 +884,6 @@ public class Nota extends javax.swing.JFrame {
                 if (data != null) {
                     data.addNota(titulo, nota, porcentaje);
                     
-                    // Update UI in the EventDispatch thread
                     SwingUtilities.invokeLater(() -> {
                         NotaData nuevaNota = data.getNotas().get(data.getNotas().size() - 1);
                         model.addRow(nuevaNota.toTableRow());
@@ -965,26 +914,20 @@ public class Nota extends javax.swing.JFrame {
         dialog.setVisible(true);
     }
 
-    // Método para mostrar el contenido de un tema específico de una materia
     private void mostrarContenidoTema(String materia, String tema) {
-        // Set current materia for navigation
         this.currentMateria = materia;
 
-        // Obtener el contenido del tema
         MateriaData data = materiasData.get(materia);
         String contenido = "";
         if (data != null) {
             contenido = data.getContenidoTema(tema);
         }
 
-        // Mostrar el contenido en el JTextPane
         contenidoPane.setText(contenido != null ? contenido : "");
 
-        // Cambiar a la vista de apuntes
         ((CardLayout) mainContentPanel.getLayout()).show(mainContentPanel, "APUNTES");
     }
 
-    // Helper method to update nota final label
     private void updateNotaFinalLabel(JTable table, MateriaData data) {
         Container parent = table.getParent();
         while (parent != null && !(parent instanceof JPanel)) {
@@ -1004,4 +947,4 @@ public class Nota extends javax.swing.JFrame {
         }
     }
 }
-                         
+
