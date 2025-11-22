@@ -61,7 +61,7 @@ public class CalendarioDashboard extends JFrame {
             UIManager.setLookAndFeel(new FlatLightLaf());
             SwingUtilities.updateComponentTreeUI(this);
         } catch (UnsupportedLookAndFeelException e) {
-          
+            // Fall back to system look and feel
         }
     }
 
