@@ -1,4 +1,12 @@
 {
   "nombre": "Invitado",
-  "puntos": 0
+  "puntos": 0,
+  "temas": [
+    "Cálculo",
+    "Física",
+    "Estadística",
+    "Programación",
+    "Geometría"
+  ],
+  "carrera": "Economía"
 }

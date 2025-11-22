@@ -1,22 +1,28 @@
 package co.edu.uis.organizationapp.vista.calendario;
+import co.edu.uis.organizationapp.modelo.CarreraManager;
 
 import co.edu.uis.organizationapp.modelo.calendario.*;
 import co.edu.uis.organizationapp.modelo.Usuario;
 import co.edu.uis.organizationapp.modelo.UsuarioManager;
+import co.edu.uis.organizationapp.modelo.comunidades.*;
 import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.List;
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 import com.formdev.flatlaf.FlatLightLaf;
 
 public class CalendarioDashboard extends JFrame {
+        // Carrera
+    private CarreraManager carreraManager;
+    private JComboBox<String> comboCarreras;
+    private JButton btnRefreshCarreras;
     private ModeloCalendario modelo;
+    private ModeloComunidades modeloComunidades;
     private VistaPanelMensual vistaMensual;
     private VistaPanelSemanal vistaSemanal;
     private VistaPanelDiaria vistaDiaria;
@@ -45,15 +51,39 @@ public class CalendarioDashboard extends JFrame {
     private Usuario usuario;
     private JLabel lblPuntosUsuario;
 
+    // --- COMUNIDADES ---
+    private DefaultListModel<Comunidad> modeloComunidadesList;
+    private JList<Comunidad> listaComunidades;
+    private JButton btnCrearComunidad, btnUnirComunidad, btnRecomendaciones;
+
     // Constructor and initial setup
     public CalendarioDashboard() {
         setupLookAndFeel();
         setupWindow();
         initializeModels();
+        carreraManager = new CarreraManager();
+        carreraManager.cargarCarreras("resources/carreras_uis.json");
         usuario = UsuarioManager.cargarUsuario();
         initializeComponents();
         setupLayout();
         loadInitialData();
+        
+        // Guardar automáticamente datos al cerrar
+        this.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                try {
+                    CalendarioFormateador.guardarModelo(modelo, "calendario_data.json");
+                } catch (Exception ex) {
+                    System.err.println("No se pudo guardar el calendario: " + ex.getMessage());
+                }
+                try {
+                    ComunidadesFormateador.guardarComunidades(modeloComunidades.obtenerComunidades(), "comunidades_data.json");
+                } catch (Exception ex) {
+                    System.err.println("No se pudieron guardar las comunidades: " + ex.getMessage());
+                }
+            }
+        });
     }
 
     private void setupLookAndFeel() {
@@ -75,10 +105,26 @@ public class CalendarioDashboard extends JFrame {
 
     private void initializeModels() {
         modelo = new ModeloCalendario();
+        modeloComunidades = new ModeloComunidades();
         fechaSeleccionada = LocalDate.now();
         
         eventListModel = new DefaultListModel<>();
         modeloBusqueda = new DefaultListModel<>();
+        modeloComunidadesList = new DefaultListModel<>();
+        
+        // Intentar cargar datos al iniciar
+        try {
+            CalendarioFormateador.cargarModelo(modelo, "calendario_data.json");
+        } catch (Exception e) {
+            System.err.println("No se pudo cargar el calendario: " + e.getMessage());
+        }
+        
+        try {
+            List<Comunidad> comunidades = ComunidadesFormateador.cargarComunidades("comunidades_data.json");
+            modeloComunidades.setComunidades(comunidades);
+        } catch (Exception e) {
+            System.err.println("No se pudieron cargar las comunidades: " + e.getMessage());
+        }
     }
 
     private void initializeComponents() {
@@ -145,18 +191,40 @@ public class CalendarioDashboard extends JFrame {
         actualizarFechaSeleccionada();
     }
 
+    private void refrescarCarreras() {
+            carreraManager.cargarCarreras("resources/carreras_uis.json");
+            comboCarreras.setModel(new DefaultComboBoxModel<>(carreraManager.getCarreras().toArray(new String[0])));
+            comboCarreras.setSelectedItem(usuario.getCarrera());
+    }
+
     private void setupLayout() {
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         splitPane.setDividerLocation((int)(getWidth() * 0.8));
         splitPane.setResizeWeight(0.8);
 
         splitPane.setLeftComponent(tabbedPane);
-        
+
         JPanel panelDerechoSplit = createRightPanel();
         splitPane.setRightComponent(panelDerechoSplit);
-        
+
         add(createToolbar(), BorderLayout.NORTH);
         add(splitPane, BorderLayout.CENTER);
+
+        // Panel de carrera
+        JPanel panelCarrera = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panelCarrera.setBorder(BorderFactory.createTitledBorder("Carrera UIS"));
+        comboCarreras = new JComboBox<>(carreraManager.getCarreras().toArray(new String[0]));
+        comboCarreras.setSelectedItem(usuario.getCarrera());
+        comboCarreras.addActionListener(e -> {
+            String seleccion = (String) comboCarreras.getSelectedItem();
+            usuario.setCarrera(seleccion);
+            UsuarioManager.guardarUsuario(usuario);
+        });
+        btnRefreshCarreras = new JButton("Actualizar carreras");
+        btnRefreshCarreras.addActionListener(e -> refrescarCarreras());
+        panelCarrera.add(comboCarreras);
+        panelCarrera.add(btnRefreshCarreras);
+        add(panelCarrera, BorderLayout.SOUTH);
     }
 
     private JPanel createRightPanel() {
