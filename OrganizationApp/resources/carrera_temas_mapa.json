@@ -1,0 +1,130 @@
+{
+  "Ingeniería de Sistemas": {
+    "descripcion": "Carrera enfocada en desarrollo de software, sistemas de información y tecnología",
+    "temas_core": [
+      "Programación", "Python", "Java", "C++", "JavaScript", "C#", "Go", "Rust",
+      "Sistemas Operativos", "Linux", "Windows Server",
+      "Bases de Datos", "SQL", "MongoDB", "PostgreSQL", "MySQL", "NoSQL",
+      "Desarrollo Web", "Frontend", "Backend", "React", "Angular", "Vue",
+      "API REST", "Seguridad Web", "Ciberseguridad"
+    ],
+    "temas_relacionados": [
+      "Arquitectura de Software", "Microservicios", "Patrones de Diseño",
+      "DevOps", "Docker", "Kubernetes", "CI/CD", "Cloud Computing", "AWS", "Azure",
+      "Inteligencia Artificial", "Machine Learning", "Deep Learning",
+      "Control de Versiones", "Git", "GitHub",
+      "Testing", "Algoritmos", "Matemáticas Discretas", "Teoría de Grafos"
+    ],
+    "temas_basicos": [
+      "Cálculo", "Álgebra", "Álgebra Lineal", "Estadística", "Probabilidad"
+    ]
+  },
+  
+  "Ingeniería Eléctrica": {
+    "descripcion": "Carrera enfocada en sistemas eléctricos de potencia y distribución de energía",
+    "temas_core": [
+      "Circuitos", "Análisis de Circuitos", "Teoría de Circuitos",
+      "Electromagnetismo", "Campos Eléctricos", "Campos Magnéticos",
+      "Potencia Eléctrica", "Distribución Eléctrica", "Máquinas Eléctricas",
+      "Transformadores", "Motores", "Generadores",
+      "Subestaciones", "Calidad de Energía"
+    ],
+    "temas_relacionados": [
+      "Sistemas de Control", "Automatización", "Control Automático",
+      "Procesamiento de Señales", "Transformada de Fourier",
+      "Electrónica", "Semiconductores", "Componentes Eléctricos",
+      "Instalaciones Eléctricas", "Códigos de Seguridad Eléctrica",
+      "Simulación MATLAB", "Programación", "Análisis de Datos"
+    ],
+    "temas_basicos": [
+      "Física", "Mecánica Clásica", "Cálculo", "Cálculo Diferencial",
+      "Cálculo Integral", "Álgebra", "Álgebra Lineal", "Ecuaciones Diferenciales",
+      "Estadística"
+    ]
+  },
+  
+  "Ingeniería Electrónica": {
+    "descripcion": "Carrera enfocada en sistemas electrónicos, microcontroladores y hardware",
+    "temas_core": [
+      "Electrónica", "Electrónica Digital", "Electrónica Analógica",
+      "Circuitos", "Análisis de Circuitos", "Diseño de Circuitos", "PCB",
+      "Microcontroladores", "Arduino", "Raspberry Pi", "FPGA",
+      "Sistemas Embebidos", "Firmware", "Hardware"
+    ],
+    "temas_relacionados": [
+      "Programación", "C", "C++", "Assembly", "VHDL", "Verilog",
+      "Automatización", "Control Automático", "Sistemas de Control",
+      "Procesamiento de Señales", "Sensores", "Actuadores",
+      "Comunicaciones", "Protocolos", "Redes de Dispositivos",
+      "Energía", "Baterías", "Fuentes de Alimentación"
+    ],
+    "temas_basicos": [
+      "Física", "Electromagnetismo", "Campos Eléctricos",
+      "Cálculo", "Álgebra", "Álgebra Lineal", "Ecuaciones Diferenciales",
+      "Estadística", "Probabilidad"
+    ]
+  },
+  
+  "Ingeniería Industrial": {
+    "descripcion": "Carrera enfocada en optimización de procesos, calidad y productividad",
+    "temas_core": [
+      "Estadística", "Estadística Descriptiva", "Estadística Inferencial",
+      "Probabilidad", "Análisis de Datos", "Predicción",
+      "Optimización", "Programación Lineal", "Algoritmos de Optimización",
+      "Investigación Operativa", "Teoría de Grafos",
+      "Calidad", "Control de Calidad", "Six Sigma", "Lean"
+    ],
+    "temas_relacionados": [
+      "Logística", "Cadena de Suministro", "Gestión de Inventario",
+      "Producción", "Procesos Productivos", "Manufactura",
+      "Mejora Continua", "Eficiencia", "Productividad",
+      "Gestión de Proyectos", "Ingeniería Económica",
+      "Programación", "Python", "R", "Excel", "Análisis de Casos"
+    ],
+    "temas_basicos": [
+      "Cálculo", "Álgebra", "Álgebra Lineal", "Ecuaciones Diferenciales",
+      "Física", "Termodinámica", "Matemáticas Discretas"
+    ]
+  },
+  
+  "Ingeniería Mecánica": {
+    "descripcion": "Carrera enfocada en diseño, análisis y manufactura de sistemas mecánicos",
+    "temas_core": [
+      "Mecánica Clásica", "Estática", "Dinámica", "Cinemática",
+      "Resistencia de Materiales", "Propiedades de Materiales", "Elasticidad",
+      "Termodinámica", "Transferencia de Calor", "Combustión",
+      "Mecánica de Fluidos", "Dinámicas de Fluidos", "Hidráulica"
+    ],
+    "temas_relacionados": [
+      "CAD", "Diseño Asistido por Computadora", "Modelado 3D",
+      "FEA", "Análisis de Elementos Finitos", "Simulación",
+      "Manufactura", "Procesos de Fabricación", "CNC", "Metrología",
+      "Automatización", "Robots Industriales", "Sistemas Mecatrónicos",
+      "Control Automático", "Sistemas de Control", "PID"
+    ],
+    "temas_basicos": [
+      "Cálculo", "Cálculo Diferencial", "Cálculo Integral",
+      "Álgebra", "Álgebra Lineal", "Ecuaciones Diferenciales",
+      "Física", "Física Clásica", "Electromagnetismo",
+      "Estadística", "Probabilidad"
+    ]
+  },
+  
+  "Materias Comunes": {
+    "descripcion": "Temas transversales aplicables a múltiples carreras de ingeniería",
+    "temas_core": [
+      "Cálculo", "Cálculo Diferencial", "Cálculo Integral", "Cálculo Multivariado",
+      "Álgebra", "Álgebra Lineal", "Matrices", "Sistemas de Ecuaciones Lineales",
+      "Ecuaciones Diferenciales", "Análisis Matemático",
+      "Estadística", "Probabilidad", "Inferencia Estadística",
+      "Física", "Mecánica Clásica", "Termodinámica", "Electromagnetismo",
+      "Programación", "Algoritmos", "Análisis de Complejidad"
+    ],
+    "temas_relacionados": [
+      "Matemáticas Discretas", "Teoría de Grafos", "Combinatoria",
+      "Geometría Analítica", "Trigonometría", "Número Complejos",
+      "Análisis Numérico", "Métodos Numéricos",
+      "Lógica", "Teoría de Conjuntos", "Lógica Booleana"
+    ]
+  }
+}

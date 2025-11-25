@@ -2,11 +2,7 @@
   "nombre": "Invitado",
   "puntos": 0,
   "temas": [
-    "Cálculo",
-    "Física",
-    "Estadística",
-    "Programación",
-    "Geometría"
+    "Física"
   ],
-  "carrera": "Economía"
+  "carrera": "Ingeniería Mecánica"
 }

@@ -6,6 +6,11 @@ import java.util.*;
 /**
  * Calcula similitud entre usuarios usando el coeficiente de Jaccard.
  * Jaccard(u,v) = |temas_u ∩ temas_v| / |temas_u ∪ temas_v|
+ * 
+ * Conceptos de Matemáticas Discretas aplicados:
+ * - Teoría de Conjuntos: Unión e Intersección para similitud temática
+ * - Grafos: Conexión entre usuarios basada en similitud
+ * - Función de Distancia: Complemento de Jaccard como métrica de distancia
  */
 public class CalculadorSimilitud {
         /**
@@ -136,5 +141,62 @@ public class CalculadorSimilitud {
                         (e1, e2) -> e1,
                         LinkedHashMap::new
                 ));
+    }
+
+    /**
+     * Calcula la Distancia de Jaccard (métrica de distancia en Matemáticas Discretas).
+     * Distancia_Jaccard = 1 - Jaccard
+     * Representa la "lejanía" entre dos conjuntos de temas.
+     * @param temas1 Primer conjunto de temas
+     * @param temas2 Segundo conjunto de temas
+     * @return Distancia entre 0 y 1 (0 = idénticos, 1 = completamente diferentes)
+     */
+    public static double calcularDistanciaJaccard(Set<String> temas1, Set<String> temas2) {
+        return 1.0 - calcularJaccardEntre(temas1, temas2);
+    }
+
+    /**
+     * Calcula el coeficiente de Dice (similitud de Sørensen) entre dos conjuntos.
+     * Dice = 2 * |A ∩ B| / (|A| + |B|)
+     * Alternativa a Jaccard, da más peso a elementos comunes.
+     * @param temas1 Primer conjunto de temas
+     * @param temas2 Segundo conjunto de temas
+     * @return Similitud entre 0 y 1
+     */
+    public static double calcularCoeficienteDice(Set<String> temas1, Set<String> temas2) {
+        if (temas1 == null || temas2 == null || (temas1.isEmpty() && temas2.isEmpty())) {
+            return 0.0;
+        }
+
+        if (temas1.isEmpty() || temas2.isEmpty()) {
+            return 0.0;
+        }
+
+        Set<String> interseccion = new HashSet<>(temas1);
+        interseccion.retainAll(temas2);
+
+        return (2.0 * interseccion.size()) / (temas1.size() + temas2.size());
+    }
+
+    /**
+     * Calcula la similitud del coseno entre dos vectores de temas (representación como sets).
+     * Basado en Álgebra Lineal y Teoría de Conjuntos.
+     * cos(θ) = |A ∩ B| / √(|A| * |B|)
+     * @param temas1 Primer conjunto de temas
+     * @param temas2 Segundo conjunto de temas
+     * @return Similitud entre 0 y 1
+     */
+    public static double calcularSimilitudCoseno(Set<String> temas1, Set<String> temas2) {
+        if (temas1 == null || temas2 == null || temas1.isEmpty() || temas2.isEmpty()) {
+            return 0.0;
+        }
+
+        Set<String> interseccion = new HashSet<>(temas1);
+        interseccion.retainAll(temas2);
+
+        double denominador = Math.sqrt((double) temas1.size() * temas2.size());
+        if (denominador == 0) return 0.0;
+        
+        return interseccion.size() / denominador;
     }
 }
